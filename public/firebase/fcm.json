@@ -1,0 +1,13 @@
+{
+    "type": "service_account",
+    "project_id": "cosamed-1e86c",
+    "private_key_id": "4445a4e29bd3501f94e2b1ede15362b12ad7d8f4",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCOR3riteMJKeqG\nca7kCKJljpYHrfrXdgngwJNzH14KpF13XD8EOoNpWePytuByLNvllMk6L9G6fqyZ\nc59K7H5bn3zN0m3vHyI7mqEp5P9l9nv/WyQd0GZBzrbKtC3kgLX9HBlRxeuO07S2\nXvys2gySM+f49eNeYV3rRD29HTTTEw59gFFKuob86gJityrFP/iY1VNZTowAPiAl\nEWIA3gdshsJ1iOoSGq4eG845yKuzImYBNGGKODJMsubPvhFjvGDPs95VBExPajVO\nex/3+aW98gYnSTiuXNxibDjY7WkJ9ure69XgH9/cwP7uDzbLe5sb6xyXIy8/rnaB\nDN26aoXlAgMBAAECggEAEeInLobZLiYwHcz9RBlXvDcjYXy7SkjCbhcWkYJQUjsd\nqmqUWyY1rVDIp5HX/VHpI97DOkaXcH8Kl9EiJQs7yK1vxPkdq1A4/8/sUPVBKuJD\n7LFahUrUB5KBhFIIcK/C8DkPb6lWdeHjVYbz8JAJw3i1wCO7+/l2EiPGNNaOdLdA\n+rVE6UbrSwlFATyviq6CEHNxJDo7i1KR65uWU/8PjDkfZjjo6zPSOll3WWxk8iDM\n7LF3XnCcc5F42blw0uAAcuSAI9QgPDIcgixqsBqfMCtO4Jata7TSXTSxIBetM4AG\n2OaddcFsuWIWjaYQFDCi1XT5PTcbmYHnOmuwU4vlkwKBgQDFNbR9968O9zUL2Sn8\noiBoepfIyk9lWZJCSfP0pf2W0mfjSDSIq6Gdnos5xtoZlKUpWky48ACVsm3kW6SW\nTb21MeZlGXnaqj779jd/YMxGUSyOGEbKmzoRbt5G7HvVCNtgEopGO8RiZjmOsfNi\nOYjDQnWi2PPLTS1xndWZ6LBspwKBgQC4sa9G9kDDrnx6hdTx3eGeOoFNeIAlEHx/\nRC/3gcYFz7FV8bKyKrwVwreLdJo/EGdLbfGGFA6H4ks2SNSsiShRzljayjF7oGc6\nZH7Vg8KBCqUF0kRcQWcRT0sOYbRumOHp9actxI6g6ak8r4LQUfgYMTo4bYtGxw7F\nctO7Xd0OkwKBgB9zlTmRyuWEH32oQL39zVVcV+C6AzeStXTE/pdB8dOf8tmYpmg1\nlyzgICwyvo3d2wlhUWMdQ7qcHlKRGwqtk1fWgXwWOAzbofflKKyz72A3ifePf5rI\nbtZg7Co7hPRQ2UvVKSBSX9uhmgRb9QjxTBJ4AvLZzufZgynfljVZmul5AoGBAJmw\nSgGL0xLCdJTkHvHxR9iKKKTVvBSbpm2kySF1nNmjHZc93AxEYWTeNivWqLAHr1zm\nLQ/8SqcqWJngexDjxWhlhCz0Cb8tGBlQHPcBgG4u9GlmsjnutpyB1hwuk51gnMU6\nBJaiNGmUZp64EevV+dPvytm/1iDcbd9CEQyeK9//AoGAILShTgrY3LjxViggY3jI\ngUCRan20+z6/IiryuxnnlSKv5mfj2VcN4Km6TOUh6cAD1DxTq716ntOPwHDRhXoF\nvXyW/4L2TIoZQkt1+senXZqUTWcCLirtjkMSZXXW4ZMsfhkaxy3wjyYvA2uta0PJ\n8bSYwLYGXSQ8DlYxOwxEYMs=\n-----END PRIVATE KEY-----\n",
+    "client_email": "firebase-adminsdk-ca43f@cosamed-1e86c.iam.gserviceaccount.com",
+    "client_id": "108716457969472700088",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-ca43f%40cosamed-1e86c.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  }
