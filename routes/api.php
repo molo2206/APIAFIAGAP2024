@@ -27,29 +27,20 @@ use App\Http\Controllers\ProjetController;
 use App\Http\Controllers\ScoreCardController;
 use App\Http\Controllers\PublicationsController;
 use App\Http\Controllers\PushNotification;
+use App\Http\Controllers\Slak;
 use App\Http\Controllers\TagsController;
 use App\Models\CategoryPublicattion;
 use App\Models\Notifications;
 use Google\Service\AlertCenter\Notification;
 
-/*
 
-
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
 //Authentification
+Route::get('/slack', [Slak::class, 'index']);
 Route::post('/create_account', [UserController::class, 'Register']);
 Route::post('/login', [UserController::class, 'Login']);
 Route::post('/ask_otp', [UserController::class, 'askcodevalidateion']);
@@ -182,6 +173,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     //Publication
     Route::post('/publication/addpublication', [PublicationsController::class, 'addpublication']);
+    Route::post('/publication/updatepublication/{id}', [PublicationsController::class, 'update_post']);
     Route::get('/publication/getpublication', [PublicationsController::class, 'getpublication']);
     Route::get('/category/getcategory', [PublicationsController::class, 'getcategory']);
 
@@ -261,4 +253,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/search_news', [PublicationsController::class, 'recherche_publication']);
     Route::get('/tag', [TagsController::class, 'getTag']);
     Route::post('/permission', [TagsController::class, 'permission']);
+
+
 });

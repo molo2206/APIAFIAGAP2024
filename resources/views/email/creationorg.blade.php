@@ -234,7 +234,7 @@ table{
 }
 .heading-section-white h2{
 	font-size: 28px;
-	font-family: 
+	font-family:
 	line-height: 1;
 	padding-bottom: 0;
 }
@@ -260,7 +260,7 @@ table{
 
 /*SERVICES*/
 .text-services{
-	padding: 10px 10px 0; 
+	padding: 10px 10px 0;
 	text-align: center;
 }
 .text-services h3{
@@ -468,7 +468,7 @@ table{
                     </tr>
                   </table>
                 </td>
-                
+
               </tr>
             </table>
         	</td>

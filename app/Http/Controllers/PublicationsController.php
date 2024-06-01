@@ -42,7 +42,7 @@ class PublicationsController extends Controller
         ]);
         $dataToken_for_user = TokenUsers::all();
         foreach ($dataToken_for_user as $item) {
-            PushNotification::sendPushNotification($item->token,$request->title, $request->content, $image);
+            PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
         }
         foreach (User::get() as $key => $value) {
             Notifications::create([
@@ -61,6 +61,46 @@ class PublicationsController extends Controller
     }
     public function update_post(Request $request, $id)
     {
+        $request->validate([
+            "image" => "required|image",
+            "title" => "required",
+            "content" => "required",
+            "auteur" => "required",
+            "image" => "required",
+            "date_post" => "required|date",
+            "cat_id" => "required",
+            "legend" => "required",
+        ]);
+        $user = Auth::user();
+        $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
+        $pub = PublicationsModel::find($id);
+        $pub->image = $image;
+        $pub->title = $request->title;
+        $pub->content = $request->content;
+        $pub->auteur = $request->auteur;
+        $pub->legend = $request->legend;
+        $pub->date_post = $request->date_post;
+        $pub->cat_id = $request->cat_id;
+        $pub->save();
+
+        $dataToken_for_user = TokenUsers::all();
+        foreach ($dataToken_for_user as $item) {
+            PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+        }
+        foreach (User::get() as $key => $value) {
+            Notifications::create([
+                "user_id" => $value->id,
+                "title" => "Une publication a été mise en ligne par Cosamed",
+                "description" => $request->title,
+                "id_type" => $pub->id,
+                "type" => "publication"
+            ]);
+        }
+
+        return response()->json([
+            "message" => 'Liste des publications',
+            "data" => PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc')->get()
+        ], 200);
     }
 
     public function destroy($id)
@@ -135,7 +175,7 @@ class PublicationsController extends Controller
             );
 
         $alldata = $data->get();
-        if(count($alldata) > 0) {
+        if (count($alldata) > 0) {
             $user->tags()->UpdateOrCreate([
                 'name' => $request->keyword,
             ], [

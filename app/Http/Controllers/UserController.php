@@ -17,61 +17,66 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
     public function Login(Request $request)
     {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'pswd' => 'required',
+            ]);
 
-        $request->validate([
-            'email' => 'required|email',
-            'pswd' => 'required',
-        ]);
-
-        if (User::where('email', $request->email)->exists()) {
-            $user = User::where('email', $request->email)->first();
-            if ($user->status == 1) {
-                if (Hash::check($request->pswd, $user->pswd)) {
-                    $token = $user->createToken("accessToken")->plainTextToken;
-                    if ($request->token) {
-                        $token_data = TokenUsers::where('token', $request->token)->first();
-                        if ($token_data != null) {
-                            $token_data->userid = $user->id;
-                            $token_data->save();
-                        } else {
-                            if ($token_data!= null && $token_data->userid == $user->id) {
+            if (User::where('email', $request->email)->exists()) {
+                $user = User::where('email', $request->email)->first();
+                if ($user->status == 1) {
+                    if (Hash::check($request->pswd, $user->pswd)) {
+                        $token = $user->createToken("accessToken")->plainTextToken;
+                        Log::channel(channel:'slack')->critical(message:  $user);
+                        if ($request->token) {
+                            $token_data = TokenUsers::where('token', $request->token)->first();
+                            if ($token_data != null) {
                                 $token_data->userid = $user->id;
                                 $token_data->save();
                             } else {
-                                TokenUsers::create([
-                                    'token' => $request->token,
-                                    'userid' => $user->id
-                                ]);
+                                if ($token_data != null && $token_data->userid == $user->id) {
+                                    $token_data->userid = $user->id;
+                                    $token_data->save();
+                                } else {
+                                    TokenUsers::create([
+                                        'token' => $request->token,
+                                        'userid' => $user->id
+                                    ]);
+                                }
                             }
                         }
+                        return response()->json([
+                            "message" => 'success',
+                            "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                ->where('id', $user->id)->first(),
+                            "status" => 1,
+                            "token" => $token
+                        ], 200);
+                    } else {
+                        return response()->json([
+                            "message" => 'Le mot de passe est incorrect'
+                        ], 422);
                     }
-                    return response()->json([
-                        "message" => 'success',
-                        "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
-                            ->where('id', $user->id)->first(),
-                        "status" => 1,
-                        "token" => $token
-                    ], 200);
                 } else {
                     return response()->json([
-                        "message" => 'Le mot de passe est incorrect'
+                        "message" => 'Votre compte n\'est pas activé'
                     ], 422);
                 }
             } else {
                 return response()->json([
-                    "message" => 'Votre compte n\'est pas activé'
-                ], 422);
+                    "message" => "Cette adresse email n'existe pas"
+                ], 404);
             }
-        } else {
-            return response()->json([
-                "message" => "Cette adresse email n'existe pas"
-            ], 404);
+        } catch (\Throwable $th) {
+            throw new \Exception($th->getMessage());
         }
     }
 
@@ -206,7 +211,7 @@ class UserController extends Controller
                         ], 402);
                     } else {
                         if ($request->profil == "") {
-                            User::create([
+                            $users=User::create([
                                 "full_name" => $request->full_name,
                                 "email" => $request->email,
                                 "pswd" => Hash::make("000000"),
@@ -218,6 +223,7 @@ class UserController extends Controller
                                 "orgid" => $request->orgid,
                             ]);
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
+                            Log::channel(channel:'slack')->critical(message:  $users);
                             return response()->json([
                                 "message" => 'Utilisateur créer avec succès!',
                                 "status" => 200,
@@ -236,6 +242,7 @@ class UserController extends Controller
                                 "orgid" => $request->orgid,
                             ]);
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
+                            Log::channel(channel:'slack')->critical(message:  $users);
                             return response()->json([
                                 "message" => 'Utilisateur créer avec succès!',
                                 "status" => 200,
@@ -283,7 +290,7 @@ class UserController extends Controller
 
                     if ($request->code == false || $codeVal == null) {
                         if ($codeValidation == true) {
-                            $code = mt_rand(1, 9999);
+                            $code = UtilController::generateCode();
                             $val = CodeValidation::where('email', $request->email)->first();
                             if ($val) {
                                 $val->code = $code;
@@ -331,11 +338,32 @@ class UserController extends Controller
                                     "status" => 1,
                                 ]);
                                 Mail::to($request->email)->send(new Createcount($request->email, $request->pswd));
+                                $token = $user->createToken("accessToken")->plainTextToken;
+                                Log::channel(channel:'slack')->critical(message:  $user);
+                                if ($request->token) {
+                                    $token_data = TokenUsers::where('token', $request->token)->first();
+
+                                    if ($token_data != null) {
+                                        $token_data->userid = $user->id;
+                                        $token_data->save();
+                                    } else {
+                                        if ($token_data != null && $token_data->userid == $user->id) {
+                                            $token_data->userid = $user->id;
+                                            $token_data->save();
+                                        } else {
+                                            TokenUsers::create([
+                                                'token' => $request->token,
+                                                'userid' => $user->id
+                                            ]);
+                                        }
+                                    }
+                                }
                                 return response()->json([
-                                    "message" => "Votre compte à été créer avec succès.",
-                                    "code" => 200,
+                                    "message" => 'success',
                                     "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
-                                        ->where('id', $user->id)->get(),
+                                        ->where('id', $user->id)->first(),
+                                    "status" => 1,
+                                    "token" => $token
                                 ], 200);
                             }
                         }
@@ -360,7 +388,7 @@ class UserController extends Controller
 
                     if ($request->code == false || $codeVal == null) {
                         if ($codeValidation == true) {
-                            $code = mt_rand(1, 9999);
+                            $code = UtilController::generateCode();
                             $val = CodeValidation::where('email', $request->email)->first();
                             if ($val) {
                                 $val->code = $code;
@@ -407,11 +435,31 @@ class UserController extends Controller
                                     "status" => 1,
                                 ]);
                                 Mail::to($request->email)->send(new Createcount($request->email, $request->pswd));
+                                $token = $user->createToken("accessToken")->plainTextToken;
+                                Log::channel(channel:'slack')->critical(message:  $user);
+                                if ($request->token) {
+                                    $token_data = TokenUsers::where('token', $request->token)->first();
+                                    if ($token_data != null) {
+                                        $token_data->userid = $user->id;
+                                        $token_data->save();
+                                    } else {
+                                        if ($token_data != null && $token_data->userid == $user->id) {
+                                            $token_data->userid = $user->id;
+                                            $token_data->save();
+                                        } else {
+                                            TokenUsers::create([
+                                                'token' => $request->token,
+                                                'userid' => $user->id
+                                            ]);
+                                        }
+                                    }
+                                }
                                 return response()->json([
-                                    "message" => "Votre compte à été créer avec succès.",
-                                    "code" => 200,
+                                    "message" => 'success',
                                     "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
-                                        ->where('id', $user->id)->get(),
+                                        ->where('id', $user->id)->first(),
+                                    "status" => 1,
+                                    "token" => $token
                                 ], 200);
                             }
                         }

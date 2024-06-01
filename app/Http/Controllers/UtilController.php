@@ -52,4 +52,17 @@ class UtilController extends Controller
             File::delete(public_path(env('APP_URL').$destination . $field));
         }
     }
+    public static function generateCode()
+    {
+        $characters = '0123456789';
+        $charactersNumber = strlen($characters);
+        $code = '';
+        while (strlen($code) < 4) {
+            $position = rand(0, $charactersNumber - 1);
+            $character = $characters[$position];
+            $code = $code . $character;
+        }
+        return $code;
+    }
+
 }
