@@ -105,15 +105,14 @@ class PublicationsController extends Controller
 
     public function destroy($id)
     {
-        $user = Auth::user();
-        $notif = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
-        if ($notif) {
-            $notif->deleted = 1;
-            $notif->update();
+        $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
+        if ($pub) {
+            $pub->deleted = 1;
+            $pub->update();
             return response()->json([
                 "message" => "Publications",
                 "code" => "200",
-                "data" => PublicationsModel::where('deleted', 0)->orderby('date', 'desc')->get(),
+                "data" => PublicationsModel::where('deleted', 0)->orderby('date_post', 'desc')->get(),
             ]);
         } else {
             return response()->json([
@@ -130,6 +129,24 @@ class PublicationsController extends Controller
             "data" => PublicationsModel::with('category')->where('deleted', 0)->orderBy('date_post', 'DESC')->get(),
             "code" => 200,
         ], 200);
+    }
+
+    public function getOnePublication($id)
+    {
+        $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
+        if($pub){
+            return response()->json([
+                "message" => 'Liste des publications',
+                "data" => PublicationsModel::with('category')->where('deleted', 0)->where('id', $id)->first(),
+                "code" => 200,
+            ], 200);
+        }else{
+            return response()->json([
+                "message" => "Identifiant not found",
+                "code" => "404"
+            ], 404);
+        }
+
     }
 
     public function getcategory()

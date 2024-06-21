@@ -175,7 +175,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/publication/addpublication', [PublicationsController::class, 'addpublication']);
     Route::post('/publication/updatepublication/{id}', [PublicationsController::class, 'update_post']);
     Route::get('/publication/getpublication', [PublicationsController::class, 'getpublication']);
+    Route::post('/publication/delete/{id}', [PublicationsController::class, 'destroy']);
     Route::get('/category/getcategory', [PublicationsController::class, 'getcategory']);
+    Route::post('/publication/get_one_pub/{id}', [PublicationsController::class, 'getOnePublication']);
 
     //ScoreCard
     Route::post('/scorecard/addentete_question', [ScoreCardController::class, 'AddEntete']);
