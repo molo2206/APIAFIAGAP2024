@@ -62,11 +62,10 @@ class PublicationsController extends Controller
     public function update_post(Request $request, $id)
     {
         $request->validate([
-            "image" => "required|image",
             "title" => "required",
             "content" => "required",
             "auteur" => "required",
-            "image" => "required",
+
             "date_post" => "required|date",
             "cat_id" => "required",
             "legend" => "required",
@@ -74,7 +73,7 @@ class PublicationsController extends Controller
         $user = Auth::user();
         $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
         $pub = PublicationsModel::find($id);
-        $pub->image = $image;
+        $pub->image = $image ? $image : $pub->image;
         $pub->title = $request->title;
         $pub->content = $request->content;
         $pub->auteur = $request->auteur;

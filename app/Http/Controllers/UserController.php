@@ -557,6 +557,7 @@ class UserController extends Controller
                 "profil" => $request->image
             ]);
             $token = $user->createToken("accessToken")->plainTextToken;
+            Log::channel(channel:'slack')->critical(message:  $user);
             return response()->json([
                 "message" => 'success',
                 "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')
@@ -572,6 +573,7 @@ class UserController extends Controller
                 "profil" => $request->image
             ]);
             $token = $user->createToken("accessToken")->plainTextToken;
+            Log::channel(channel:'slack')->critical(message:  $user);
             return response()->json([
                 "message" => 'success',
                 "data" => $user,
