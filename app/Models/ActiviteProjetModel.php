@@ -21,6 +21,7 @@ class ActiviteProjetModel extends Model
         "indicateurid",
         "structureid",
         "typeimpactid",
+        "semaine",
         "periode_rapportage",
     ];
 

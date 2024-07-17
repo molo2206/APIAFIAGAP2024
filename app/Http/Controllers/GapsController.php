@@ -1568,10 +1568,6 @@ class GapsController extends Controller
 
     public function getlastgapvalide()
     {
-
-        $dt = new DateTime();
-        $startDate = $dt->format('Y-m-d');
-
         return response()->json([
             "message" => 'Derniers gap validés par structure',
             "code" => 200,
@@ -1594,6 +1590,7 @@ class GapsController extends Controller
                 'gap_appuis'
             )->orderby('dateadd', 'desc')->where('deleted', 0)->whereNot('children', null)->get()
         ]);
+
     }
     public function deleteImageGap($id)
     {

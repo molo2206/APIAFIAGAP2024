@@ -35,7 +35,7 @@ class UserController extends Controller
                 if ($user->status == 1) {
                     if (Hash::check($request->pswd, $user->pswd)) {
                         $token = $user->createToken("accessToken")->plainTextToken;
-                        Log::channel(channel:'slack')->critical(message:  $user);
+                        Log::channel(channel: 'slack')->critical(message: $user);
                         if ($request->token) {
                             $token_data = TokenUsers::where('token', $request->token)->first();
                             if ($token_data != null) {
@@ -78,6 +78,14 @@ class UserController extends Controller
         } catch (\Throwable $th) {
             throw new \Exception($th->getMessage());
         }
+    }
+    public function getUsers()
+    {
+        return response()->json([
+            "message" => "Liste des utilisateurs",
+            "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                ->get(),
+        ]);
     }
 
     public function getuser()
@@ -211,7 +219,7 @@ class UserController extends Controller
                         ], 402);
                     } else {
                         if ($request->profil == "") {
-                            $users=User::create([
+                            $users = User::create([
                                 "full_name" => $request->full_name,
                                 "email" => $request->email,
                                 "pswd" => Hash::make("000000"),
@@ -223,7 +231,7 @@ class UserController extends Controller
                                 "orgid" => $request->orgid,
                             ]);
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
-                            Log::channel(channel:'slack')->critical(message:  $users);
+                            Log::channel(channel: 'slack')->critical(message: $users);
                             return response()->json([
                                 "message" => 'Utilisateur créer avec succès!',
                                 "status" => 200,
@@ -242,7 +250,7 @@ class UserController extends Controller
                                 "orgid" => $request->orgid,
                             ]);
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
-                            Log::channel(channel:'slack')->critical(message:  $users);
+                            Log::channel(channel: 'slack')->critical(message: $users);
                             return response()->json([
                                 "message" => 'Utilisateur créer avec succès!',
                                 "status" => 200,
@@ -339,7 +347,7 @@ class UserController extends Controller
                                 ]);
                                 Mail::to($request->email)->send(new Createcount($request->email, $request->pswd));
                                 $token = $user->createToken("accessToken")->plainTextToken;
-                                Log::channel(channel:'slack')->critical(message:  $user);
+                                Log::channel(channel: 'slack')->critical(message: $user);
                                 if ($request->token) {
                                     $token_data = TokenUsers::where('token', $request->token)->first();
 
@@ -436,7 +444,7 @@ class UserController extends Controller
                                 ]);
                                 Mail::to($request->email)->send(new Createcount($request->email, $request->pswd));
                                 $token = $user->createToken("accessToken")->plainTextToken;
-                                Log::channel(channel:'slack')->critical(message:  $user);
+                                Log::channel(channel: 'slack')->critical(message: $user);
                                 if ($request->token) {
                                     $token_data = TokenUsers::where('token', $request->token)->first();
                                     if ($token_data != null) {
@@ -471,6 +479,32 @@ class UserController extends Controller
                     "code" => 402
                 ], 402);
             }
+        }
+    }
+
+    public function addfingerprint(Request $request)
+    {
+        $request->validate([
+            'email' => 'required',
+            'fingerprint' => 'required',
+        ]);
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            if ($request->fingerprint == null) {
+                $user->fingerprint = $user->fingerprint;
+            } else {
+                $user->fingerprint = $request->fingerprint;
+            }
+            $user->save();
+            return response()->json([
+                "message" => "Fingerprint modifier avec succès",
+                "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                    ->where('id', $user->id)->first(),
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Identifiant incorrect"
+            ], 422);
         }
     }
 
@@ -545,8 +579,6 @@ class UserController extends Controller
     {
         $request->validate([
             "email" => "required|email",
-            "fullname" => "required",
-            "image" => "required",
         ]);
         $user = User::where('email', $request->email)->first();
         if ($user) {
@@ -557,7 +589,7 @@ class UserController extends Controller
                 "profil" => $request->image
             ]);
             $token = $user->createToken("accessToken")->plainTextToken;
-            Log::channel(channel:'slack')->critical(message:  $user);
+            Log::channel(channel: 'slack')->critical(message: $user);
             return response()->json([
                 "message" => 'success',
                 "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')
@@ -573,7 +605,7 @@ class UserController extends Controller
                 "profil" => $request->image
             ]);
             $token = $user->createToken("accessToken")->plainTextToken;
-            Log::channel(channel:'slack')->critical(message:  $user);
+            Log::channel(channel: 'slack')->critical(message: $user);
             return response()->json([
                 "message" => 'success',
                 "data" => $user,

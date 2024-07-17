@@ -31,6 +31,7 @@ class User extends Authenticatable
         'profil',
         'dateBorn',
         'id',
+        'fingerprint'
     ];
 
     /**
@@ -79,7 +80,6 @@ class User extends Authenticatable
     public function checkPermission($name)
     {
         $exis = $this->engagement_as_permission->permissions()->where('name', $name)->first();
-
         if ($exis) {
             if ($exis->access) {
                 return true;

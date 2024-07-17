@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\FireBasePushTest;
+use App\Http\Controllers\FieldController;
+use App\Http\Controllers\FieldTypeController;
+use App\Http\Controllers\FormController;
+use App\Http\Controllers\FormsController;
 use App\Http\Controllers\GapAppuiController;
 use App\Http\Controllers\Me3nageController;
 use App\Http\Controllers\MenageController;
@@ -27,20 +31,31 @@ use App\Http\Controllers\ProjetController;
 use App\Http\Controllers\ScoreCardController;
 use App\Http\Controllers\PublicationsController;
 use App\Http\Controllers\PushNotification;
-use App\Http\Controllers\Slak;
 use App\Http\Controllers\TagsController;
+use App\Http\Controllers\testForm;
+use App\Http\Controllers\UserHasFormController;
 use App\Models\CategoryPublicattion;
 use App\Models\Notifications;
 use Google\Service\AlertCenter\Notification;
 
+/*
 
+
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
 //Authentification
-Route::get('/slack', [Slak::class, 'index']);
 Route::post('/create_account', [UserController::class, 'Register']);
 Route::post('/login', [UserController::class, 'Login']);
 Route::post('/ask_otp', [UserController::class, 'askcodevalidateion']);
@@ -52,11 +67,13 @@ Route::get('/alert/getlastalertvalide', [AlertController::class, 'getlastalertva
 Route::post('/contact/getintouch', [PublicationsController::class, 'contact']);
 Route::get('/configuration/get_infos_organisation', [ConfigurationController::class, 'get_infos_organisation']);
 Route::get('/user/infouseraffectation/{id}', [UserController::class, 'InfosUserByaffectation']);
+Route::post('/updatefinger', [UserController::class, 'addfingerprint']);
+Route::get('/users/listeUsers_desk', [UserController::class, 'getUsers']);
 Route::post('/to', [FireBasePushTest::class, 'push_to']);
 
 
-
 Route::group(['middleware' => ['auth:sanctum']], function () {
+
     Route::post('/affectation/addaffectation', [AffectationController::class, 'Affectation']);
     Route::post('/permission/addpermission', [AffectationController::class, 'create_permission']);
     Route::post('/permission/updatepermission/{id}', [AffectationController::class, 'update_permission']);
@@ -136,8 +153,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //Gap medical
     Route::post('/gap/sendGap', [GapsController::class, 'AddGap']);
     Route::post('/gap/sendImageGap/{id}', [GapsController::class, 'Imagegap']);
-    Route::post('/gap/updategap/{id}', [GapsController::class, 'UpdateGap']);
     Route::post('/gap/deleteimagegap/{id}', [GapsController::class, 'deleteImageGap']);
+    Route::post('/gap/updategap/{id}', [GapsController::class, 'UpdateGap']);
     Route::post('/gap/deletegap/{id}', [GapsController::class, 'deletegap']);
     Route::post('/gap/validegap/{id}', [GapsController::class, 'valideGap']);
     Route::get('/gap/listgap/{id}', [GapsController::class, 'listGap']);
@@ -156,6 +173,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //Alert
     Route::post('/alert/sendAlert', [AlertController::class, 'sendAlert']);
     Route::post('/alert/sendimageAlert/{id}', [AlertController::class, 'Imagealert']);
+    Route::post('/imagealert/delete/{id}', [AlertController::class, 'deleteImageAlert']);
     Route::put('/alert/updateAlert/{id}', [AlertController::class, 'updateAlert']);
     Route::post('/alert/updateAlertMobile/{id}', [AlertController::class, 'updateAlert']);
     Route::post('/alert/suppressionalert/{id}', [AlertController::class, 'suppressionalert']);
@@ -169,15 +187,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/alert/get_alert_valide_byuser/{id}', [AlertController::class, 'getAlertvalideByuser']);
     Route::get('/alert/get_alertinvalide_byuser/{id}', [AlertController::class, 'getAlertInvalideByuser']);
     Route::get('/alert/get_all_alertinvalide/{id}', [AlertController::class, 'getAlertInvalide']);
-    Route::post('/imagealert/delete/{id}', [AlertController::class, 'deleteImageAlert']);
 
     //Publication
     Route::post('/publication/addpublication', [PublicationsController::class, 'addpublication']);
     Route::post('/publication/updatepublication/{id}', [PublicationsController::class, 'update_post']);
     Route::get('/publication/getpublication', [PublicationsController::class, 'getpublication']);
-    Route::post('/publication/delete/{id}', [PublicationsController::class, 'destroy']);
     Route::get('/category/getcategory', [PublicationsController::class, 'getcategory']);
-    Route::post('/publication/get_one_pub/{id}', [PublicationsController::class, 'getOnePublication']);
+    Route::post('/publication/delete/{id}', [PublicationsController::class, 'destroy']);
+    Route::get('/publication/get_one_pub/{id}', [PublicationsController::class, 'getOnePublication']);
 
     //ScoreCard
     Route::post('/scorecard/addentete_question', [ScoreCardController::class, 'AddEntete']);
@@ -190,6 +207,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/scorecard/update_evaluation/{id}', [ScoreCardController::class, 'updateEvaluation']);
     Route::get('/scorecard/get_evaluation', [ScoreCardController::class, 'list_evaluation']);
     Route::get('/scorecard/getquestion_scorecard/{id}', [ScoreCardController::class, 'list_question_scorecard']);
+
 
     //Menage & personne
     Route::post('/menage/new_menage', [MenageController::class, 'create_menage']);
@@ -256,5 +274,38 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/tag', [TagsController::class, 'getTag']);
     Route::post('/permission', [TagsController::class, 'permission']);
 
+        //Création du formulaire
+    Route::post('/form/create', [FormController::class, 'store']);
+    Route::get('/form/list', [FormsController::class, 'index']);
+    Route::post('/form/update/{id}', [FormsController::class, 'update']);
+    Route::delete('/form/delete/{id}', [FormsController::class, 'destroy']);
+    Route::post('/form/status/{id}', [FormsController::class, 'status']);
+
+
+    //Création des types fields
+    Route::post('/typefield/create', [FieldTypeController::class, 'store']);
+    Route::post('/typefield/update/{id}',[FieldTypeController::class, 'update']);
+    Route::get('/typefield/list', [FieldTypeController::class, 'index']);
+    Route::post('/typefield/status/{id}', [FieldTypeController::class, 'status']);
+    Route::delete('/typefield/delete/{id}', [FieldTypeController::class, 'destroy']);
+
+    // Creation des fields
+    Route::post('/field/create', [FieldController::class, 'store']);
+    Route::get('/field/list', [FieldController::class, 'index']);
+    Route::post('/field/status/{id}', [FieldController::class,'status']);
+    Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
+    Route::get('/field/show/{otp}', [FieldController::class,'show']);
+    Route::get('/field/show_form/{id}', [FieldController::class,'show_by_id']);
+
+    //SendFormulaire
+    Route::post('/form_data/create', [UserHasFormController::class, 'store']);
+    Route::get('/form_data/show/{id}', [FormsController::class, 'show_form_by_id']);
+
+
+    Route::get('/field/list', [FieldController::class, 'index']);
+    Route::post('/field/status/{id}', [FieldController::class,'status']);
+    Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
+    Route::get('/field/show/{otp}', [FieldController::class,'show']);
+    Route::get('/field/show_form/{id}', [FieldController::class,'show_by_id']);
 
 });
