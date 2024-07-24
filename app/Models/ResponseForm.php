@@ -15,4 +15,8 @@ class ResponseForm extends Model
         'field_id',
         'value',
     ];
+
+    public function hasForm(){
+        return $this->belongsTo(UserHasForm::class,'hasformid','id');
+    }
 }

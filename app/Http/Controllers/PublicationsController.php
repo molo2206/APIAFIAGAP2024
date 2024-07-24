@@ -18,46 +18,54 @@ class PublicationsController extends Controller
 {
     public function addpublication(Request $request)
     {
-        $request->validate([
-            "image" => "required|image",
-            "title" => "required",
-            "content" => "required",
-            "auteur" => "required",
-            "image" => "required",
-            "date_post" => "required|date",
-            "cat_id" => "required",
-            "legend" => "required",
-        ]);
         $user = Auth::user();
-        $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
-        $pub = PublicationsModel::UpdateOrCreate(['title' => $request->title], [
-            "image" => $image,
-            "title" => $request->title,
-            "content" => $request->content,
-            "auteur" => $request->auteur,
-            "legend" => $request->legend,
-            "date_post" => $request->date_post,
-            "cat_id" => $request->cat_id,
-
-        ]);
-        $dataToken_for_user = TokenUsers::all();
-        foreach ($dataToken_for_user as $item) {
-            PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
-        }
-        foreach (User::get() as $key => $value) {
-            Notifications::create([
-                "user_id" => $value->id,
-                "title" => "Une publication a été mise en ligne par Cosamed",
-                "description" => $request->title,
-                "id_type" => $pub->id,
-                "type" => "publication"
+        if ($user->checkPermission('create_publications')) {
+            $request->validate([
+                "image" => "required|image",
+                "title" => "required",
+                "content" => "required",
+                "auteur" => "required",
+                "image" => "required",
+                "date_post" => "required|date",
+                "cat_id" => "required",
+                "legend" => "required",
             ]);
-        }
+            $user = Auth::user();
+            $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
+            $pub = PublicationsModel::UpdateOrCreate(['title' => $request->title], [
+                "image" => $image,
+                "title" => $request->title,
+                "content" => $request->content,
+                "auteur" => $request->auteur,
+                "legend" => $request->legend,
+                "date_post" => $request->date_post,
+                "cat_id" => $request->cat_id,
 
-        return response()->json([
-            "message" => 'Liste des publications',
-            "data" => PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc')->get()
-        ], 200);
+            ]);
+            $dataToken_for_user = TokenUsers::all();
+            foreach ($dataToken_for_user as $item) {
+                PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+            }
+            foreach (User::get() as $key => $value) {
+                Notifications::create([
+                    "user_id" => $value->id,
+                    "title" => "Une publication a été mise en ligne par Cosamed",
+                    "description" => $request->title,
+                    "id_type" => $pub->id,
+                    "type" => "publication"
+                ]);
+            }
+
+            return response()->json([
+                "message" => 'Liste des publications',
+                "data" => PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc')->get()
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
+        }
     }
     public function update_post(Request $request, $id)
     {
@@ -71,53 +79,68 @@ class PublicationsController extends Controller
             "legend" => "required",
         ]);
         $user = Auth::user();
-        $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
-        $pub = PublicationsModel::find($id);
-        $pub->image = $image ? $image : $pub->image;
-        $pub->title = $request->title;
-        $pub->content = $request->content;
-        $pub->auteur = $request->auteur;
-        $pub->legend = $request->legend;
-        $pub->date_post = $request->date_post;
-        $pub->cat_id = $request->cat_id;
-        $pub->save();
+        if ($user->checkPermission('create_publications')) {
+            $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
+            $pub = PublicationsModel::find($id);
+            $pub->image = $image ? $image : $pub->image;
+            $pub->title = $request->title;
+            $pub->content = $request->content;
+            $pub->auteur = $request->auteur;
+            $pub->legend = $request->legend;
+            $pub->date_post = $request->date_post;
+            $pub->cat_id = $request->cat_id;
+            $pub->save();
 
-        $dataToken_for_user = TokenUsers::all();
-        foreach ($dataToken_for_user as $item) {
-            PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
-        }
-        foreach (User::get() as $key => $value) {
-            Notifications::create([
-                "user_id" => $value->id,
-                "title" => "Une publication a été mise en ligne par Cosamed",
-                "description" => $request->title,
-                "id_type" => $pub->id,
-                "type" => "publication"
-            ]);
-        }
+            $dataToken_for_user = TokenUsers::all();
+            foreach ($dataToken_for_user as $item) {
+                PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+            }
+            foreach (User::get() as $key => $value) {
+                Notifications::create([
+                    "user_id" => $value->id,
+                    "title" => "Une publication a été mise en ligne par Cosamed",
+                    "description" => $request->title,
+                    "id_type" => $pub->id,
+                    "type" => "publication"
+                ]);
+            }
 
-        return response()->json([
-            "message" => 'Liste des publications',
-            "data" => PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc')->get()
-        ], 200);
+            return response()->json([
+                "message" => 'Liste des publications',
+                "data" => PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc')->get()
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
+        }
     }
 
     public function destroy($id)
     {
-        $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
-        if ($pub) {
-            $pub->deleted = 1;
-            $pub->update();
-            return response()->json([
-                "message" => "Publications",
-                "code" => "200",
-                "data" => PublicationsModel::where('deleted', 0)->orderby('date_post', 'desc')->get(),
-            ]);
+        $user=Auth::user();
+        if ($user->checkPermission('create_publications')) {
+            $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
+            if ($pub) {
+                $pub->deleted = 1;
+                $pub->update();
+                return response()->json([
+                    "message" => "Publications",
+                    "code" => "200",
+                    "data" => PublicationsModel::where('deleted', 0)->orderby('date_post', 'desc')->get(),
+                ]);
+            } else {
+                return response()->json([
+                    "message" => "Identifiant not found",
+                    "code" => "402"
+                ], 402);
+            }
         } else {
             return response()->json([
-                "message" => "Identifiant not found",
-                "code" => "402"
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -133,19 +156,18 @@ class PublicationsController extends Controller
     public function getOnePublication($id)
     {
         $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
-        if($pub){
+        if ($pub) {
             return response()->json([
                 "message" => 'Liste des publications',
                 "data" => PublicationsModel::with('category')->where('deleted', 0)->where('id', $id)->first(),
                 "code" => 200,
             ], 200);
-        }else{
+        } else {
             return response()->json([
                 "message" => "Identifiant not found",
                 "code" => "404"
             ], 404);
         }
-
     }
 
     public function getcategory()

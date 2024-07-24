@@ -13,9 +13,18 @@ class UserHasForm extends Model
     protected $fillable =[
         'userid',
         'formid',
+        'structure_id'
     ];
 
     public function response(){
         return $this->belongsToMany(FieldsModel::class, 'response_forms', 'hasformid', 'field_id')->withPivot(["hasformid", "field_id","value"]);
     }
+    public function form(){
+        return $this->belongsTo(formsModel::class,'formid', 'id');
+    }
+
+    public function structure(){
+        return $this->belongsTo(structureSanteModel::class,'structure_id', 'id');
+    }
+
 }

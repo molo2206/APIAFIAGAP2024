@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -15,7 +16,10 @@ class formsModel extends Model
     protected $fillable=[
         'title',
         'description',
-        'otp_form'
+        'otp_form',
+        'project_id',
+        'type',
+        'orgid',
     ];
 
     public function field(){
@@ -30,4 +34,13 @@ class formsModel extends Model
         return $this->hasMany(UserHasForm::class, 'formid', 'id');
     }
 
+    public function project(){
+        return $this->belongsTo(ProjetModel::class, 'project_id', 'id');
+    }
+    public function organisation(){
+        return $this->belongsTo(Organisation::class, 'orgid', 'id');
+    }
+    public function hasform(){
+        return $this->hasMany(UserHasForm::class, 'formid', 'id');
+    }
 }

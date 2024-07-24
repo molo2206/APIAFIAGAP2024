@@ -33,7 +33,7 @@ class FieldController extends Controller
             return response()->json([
                 "message" => "Saved successfully",
                 "code" => 200,
-                "data" => formsModel::with('fields.typefield')->where('otp_form', $form->otp_form)->first()
+                "data" => formsModel::with('fields.typefield','project.struturesantes')->where('otp_form', $form->otp_form)->first()
             ], 200);
         } else {
             return response()->json([
@@ -52,7 +52,7 @@ class FieldController extends Controller
             return response()->json([
                 "message" => "Saved successfully",
                 "code" => 200,
-                "data" => formsModel::with('fields.typefield')->where('id', $form->id)->first()
+                "data" => formsModel::with('fields.typefield','project.struturesantes')->where('id', $form->id)->first()
             ], 200);
         } else {
             return response()->json([
@@ -85,7 +85,7 @@ class FieldController extends Controller
                 return response()->json([
                     "message" => "Saved successfully",
                     "code" => 200,
-                    "data" => $form::with('fields.typefield')->first()
+                    "data" => formsModel::with('fields.typefield')->where('id', $form->id)->first()
                 ], 200);
             } else {
                 return response()->json([

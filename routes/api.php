@@ -274,9 +274,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/tag', [TagsController::class, 'getTag']);
     Route::post('/permission', [TagsController::class, 'permission']);
 
-        //Création du formulaire
-    Route::post('/form/create', [FormController::class, 'store']);
+    //Création du formulaire
+    Route::post('/form/create', [FormsController::class, 'store']);
     Route::get('/form/list', [FormsController::class, 'index']);
+    Route::get('/form/list/{id}', [FormsController::class, 'get_by_org']);
     Route::post('/form/update/{id}', [FormsController::class, 'update']);
     Route::delete('/form/delete/{id}', [FormsController::class, 'destroy']);
     Route::post('/form/status/{id}', [FormsController::class, 'status']);
@@ -284,7 +285,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     //Création des types fields
     Route::post('/typefield/create', [FieldTypeController::class, 'store']);
-    Route::post('/typefield/update/{id}',[FieldTypeController::class, 'update']);
+    Route::post('/typefield/update/{id}', [FieldTypeController::class, 'update']);
     Route::get('/typefield/list', [FieldTypeController::class, 'index']);
     Route::post('/typefield/status/{id}', [FieldTypeController::class, 'status']);
     Route::delete('/typefield/delete/{id}', [FieldTypeController::class, 'destroy']);
@@ -292,20 +293,22 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Creation des fields
     Route::post('/field/create', [FieldController::class, 'store']);
     Route::get('/field/list', [FieldController::class, 'index']);
-    Route::post('/field/status/{id}', [FieldController::class,'status']);
+    Route::post('/field/status/{id}', [FieldController::class, 'status']);
     Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
-    Route::get('/field/show/{otp}', [FieldController::class,'show']);
-    Route::get('/field/show_form/{id}', [FieldController::class,'show_by_id']);
+    Route::get('/field/show/{otp}', [FieldController::class, 'show']);
+    Route::get('/field/show_form/{id}', [FieldController::class, 'show_by_id']);
 
     //SendFormulaire
     Route::post('/form_data/create', [UserHasFormController::class, 'store']);
     Route::get('/form_data/show/{id}', [FormsController::class, 'show_form_by_id']);
+    Route::get('/data_form/show/{id}', [UserHasFormController::class, 'get_by_stucture']);
+    Route::get('/data_by_form/show/{id}', [FormsController::class, 'get_form_data']);
+    Route::get('/data_form_by_user', [FormsController::class, 'form_data_by_User']);
 
 
     Route::get('/field/list', [FieldController::class, 'index']);
-    Route::post('/field/status/{id}', [FieldController::class,'status']);
+    Route::post('/field/status/{id}', [FieldController::class, 'status']);
     Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
-    Route::get('/field/show/{otp}', [FieldController::class,'show']);
-    Route::get('/field/show_form/{id}', [FieldController::class,'show_by_id']);
-
+    Route::get('/field/show/{otp}', [FieldController::class, 'show']);
+    Route::get('/field/show_form/{id}', [FieldController::class, 'show_by_id']);
 });
