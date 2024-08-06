@@ -7,7 +7,9 @@ use App\Models\AffectationPermission;
 use App\Models\Organisation;
 use App\Models\Permission;
 use App\Models\RoleModel;
+use App\Models\Type_users;
 use App\Models\User;
+use App\Models\User_has_Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,9 +46,20 @@ class AffectationController extends Controller
                     $affectation->roleid = $request->roleid;
                     $affectation->userid = $request->userid;
                     $affectation->save();
+
+                    $user_ = User::find('id', $request->userid);
+                    $type =  Type_users::where('name', 'admin')->first();
+
+                    if ($user) {
+                        User_has_Type::create([
+                            'userid' => $user_->id,
+                            'typeid' => $type->id,
+                        ]);
+                    }
+
                     return response()->json([
                         "message" => "Affctation réussie avec succèss",
-                        "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
+                        "data" => AffectationModel::with('user.type_user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
                     ], 200);
                 } else {
                     if (Organisation::where('id', $request->orgid_affect)->first()) {
@@ -61,7 +74,7 @@ class AffectationController extends Controller
                                 ]);
                                 return response()->json([
                                     "message" => "Affctation réussie avec succès",
-                                    "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
+                                    "data" => AffectationModel::with('user.type_user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
                                 ], 200);
                             } else {
                                 return response()->json([
@@ -294,9 +307,9 @@ class AffectationController extends Controller
                     $affectation->affectationpermission()->detach();
                     foreach ($request->permissionid as $item) {
                         $affectation->affectationpermission()->attach([
-                            $affectation->id=>[
+                            $affectation->id => [
                                 'affectationid' => $request->affectationid,
-                                 'permissionid' => $item,
+                                'permissionid' => $item,
                             ]
                         ]);
                     }

@@ -13,7 +13,9 @@ use App\Models\Organisation;
 use App\Models\Permission;
 use App\Models\RoleModel;
 use App\Models\TokenUsers;
+use App\Models\Type_users;
 use App\Models\User;
+use App\Models\User_has_Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -55,7 +57,7 @@ class UserController extends Controller
                         }
                         return response()->json([
                             "message" => 'success',
-                            "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                            "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                                 ->where('id', $user->id)->first(),
                             "status" => 1,
                             "token" => $token
@@ -93,7 +95,7 @@ class UserController extends Controller
         $user = Auth::user();
         return response()->json([
             "message" => 'success',
-            "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+            "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                 ->where('id', $user->id)->first(),
         ], 200);
     }
@@ -107,7 +109,7 @@ class UserController extends Controller
             $token = $user->createToken("accessToken")->plainTextToken;
             return response()->json([
                 "message" => 'success',
-                "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                     ->where('id', $user->id)->first(),
                 "status" => 1,
                 "token" => $token
@@ -150,7 +152,7 @@ class UserController extends Controller
     {
         return response()->json([
             "message" => 'Liste des utilisateurs',
-            "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
+            "data" => User::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
             "status" => 200,
         ], 200);
     }
@@ -160,7 +162,7 @@ class UserController extends Controller
         if ($org) {
             return response()->json([
                 "message" => 'Liste des utilisateurs',
-                "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->paginate(),
+                "data" => User::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->paginate(),
                 "status" => 200,
             ], 200);
         } else {
@@ -230,6 +232,13 @@ class UserController extends Controller
                                 "dateBorn" => $request->dateBorn,
                                 "orgid" => $request->orgid,
                             ]);
+                            $type =  Type_users::where('name', 'user')->first();
+                            if ($user) {
+                                User_has_Type::create([
+                                    'userid' => $users->id,
+                                    'typeid' => $type->id,
+                                ]);
+                            }
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
                             Log::channel(channel: 'slack')->critical(message: $users);
                             return response()->json([
@@ -238,7 +247,7 @@ class UserController extends Controller
                             ], 200);
                         } else {
                             $image = UtilController::uploadImageUrl($request->image, '/uploads/user/');
-                            User::create([
+                            $users = User::create([
                                 "full_name" => $request->full_name,
                                 "email" => $request->email,
                                 "pswd" => Hash::make("000000"),
@@ -249,6 +258,13 @@ class UserController extends Controller
                                 "dateBorn" => $request->dateBorn,
                                 "orgid" => $request->orgid,
                             ]);
+                            $type =  Type_users::where('name', 'admin')->first();
+                            if ($user) {
+                                User_has_Type::create([
+                                    'userid' => $users->id,
+                                    'typeid' => $type->id,
+                                ]);
+                            }
                             Mail::to($request->email)->send(new Createcount($request->email, "000000"));
                             Log::channel(channel: 'slack')->critical(message: $users);
                             return response()->json([
@@ -340,6 +356,13 @@ class UserController extends Controller
                                     "orgid" => $request->orgid,
                                     "profil" => 'https://apiafiagap.cosamed.org/public/uploads/user/a01f3ca6e3e4ece8e1a30696f52844bc.png'
                                 ]);
+                                $type =  Type_users::where('name', 'user')->first();
+                                if ($user) {
+                                    User_has_Type::create([
+                                        'userid' => $user->id,
+                                        'typeid' => $type->id,
+                                    ]);
+                                }
 
                                 $change = CodeValidation::where('code', $request->code)->first();
                                 $change->update([
@@ -368,7 +391,7 @@ class UserController extends Controller
                                 }
                                 return response()->json([
                                     "message" => 'success',
-                                    "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                                         ->where('id', $user->id)->first(),
                                     "status" => 1,
                                     "token" => $token
@@ -437,7 +460,13 @@ class UserController extends Controller
                                     "orgid" => $request->orgid,
                                     "profil" => 'https://apiafiagap.cosamed.org/public/uploads/user/a01f3ca6e3e4ece8e1a30696f52844bc.png'
                                 ]);
-
+                                $type =  Type_users::where('name', 'user')->first();
+                                if ($user) {
+                                    User_has_Type::create([
+                                        'userid' => $user->id,
+                                        'typeid' => $type->id,
+                                    ]);
+                                }
                                 $change = CodeValidation::where('code', $request->code)->first();
                                 $change->update([
                                     "status" => 1,
@@ -464,7 +493,7 @@ class UserController extends Controller
                                 }
                                 return response()->json([
                                     "message" => 'success',
-                                    "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                    "data" => $user::with('affectation.role', 'typeUser','affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                                         ->where('id', $user->id)->first(),
                                     "status" => 1,
                                     "token" => $token
@@ -588,6 +617,13 @@ class UserController extends Controller
                 "provider" => 1,
                 "profil" => $request->image
             ]);
+            $type =  Type_users::where('name', 'user')->first();
+            if ($user) {
+                User_has_Type::create([
+                    'userid' => $user->id,
+                    'typeid' => $type->id,
+                ]);
+            }
             $token = $user->createToken("accessToken")->plainTextToken;
             Log::channel(channel: 'slack')->critical(message: $user);
             return response()->json([
@@ -604,6 +640,13 @@ class UserController extends Controller
                 "provider" => 1,
                 "profil" => $request->image
             ]);
+            $type =  Type_users::where('name', 'user')->first();
+            if ($user) {
+                User_has_Type::create([
+                    'userid' => $user->id,
+                    'typeid' => $type->id,
+                ]);
+            }
             $token = $user->createToken("accessToken")->plainTextToken;
             Log::channel(channel: 'slack')->critical(message: $user);
             return response()->json([
@@ -810,6 +853,92 @@ class UserController extends Controller
             "status" => 1,
             "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                 ->where('id', $user->id)->first(),
+        ], 200);
+    }
+
+    public function add_type_user(Request $request)
+    {
+        $request->validate([
+            "name" => "required|string|unique:type_user,name"
+        ]);
+
+        $type = Type_users::create([
+            "name" => $request->name
+        ]);
+
+        return response()->json([
+            "message" => 'Type d\'utilisateur créé avec succès',
+            "status" => 1,
+            "data" => $type
+        ], 200);
+    }
+
+    public function update_type_user(Request $request, $id)
+    {
+        $type = Type_users::where('id', $id)->first();
+        if ($type) {
+            $type->name = $request->name;
+            $type->save();
+            return response()->json([
+                "message" => 'Type d\'utilisateur modifié avec succès',
+                "code" => 200,
+                "data" => $type
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => 'Type d\'utilisateur non trouvé',
+                "code" => 404
+            ], 404);
+        }
+    }
+    public function status(Request $request, $id)
+    {
+        $request->validate([
+            "status" => "required|boolean"
+        ]);
+
+        $type = Type_users::where('id', $id)->first();
+        if ($type) {
+            $type->status = $request->status;
+            $type->save();
+            return response()->json([
+                "message" => 'Type d\'utilisateur modifié avec succès',
+                "code" => 200,
+                "data" => $type
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => 'Type d\'utilisateur non trouvé',
+                "code" => 404
+            ], 404);
+        }
+    }
+
+    public function delete($id)
+    {
+        $type = Type_users::where('id', $id)->first();
+        if ($type) {
+            $type->deleted = 1;
+            $type->save();
+            return response()->json([
+                "message" => 'Type d\'utilisateur modifié avec succès',
+                "code" => 200,
+                "data" => $type
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => 'Type d\'utilisateur non trouvé',
+                "code" => 404
+            ], 404);
+        }
+    }
+
+    public function index()
+    {
+        return response()->json([
+            "message" => 'Liste des types d\'utilisateurs',
+            "code" => 200,
+            "data" => Type_users::where('status', 1)->where('deleted', 0)->get()
         ], 200);
     }
 }

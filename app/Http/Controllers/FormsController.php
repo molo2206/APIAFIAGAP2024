@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\formsModel;
-use App\Models\User;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\UtilController;
+use App\Models\Form_has_project_has_orga;
 use App\Models\Organisation;
 use App\Models\ProjetModel;
-use App\Models\ResponseForm;
 use App\Models\UserHasForm;
 
 class FormsController extends Controller
@@ -21,7 +21,7 @@ class FormsController extends Controller
             return response()->json([
                 "message" => "Forms list",
                 "code" => "200",
-                "data" => formsModel::with('organisation', 'project')->where('status', 1)->where('deleted', 0)->get(),
+                "data" => formsModel::where('status', 1)->where('deleted', 0)->get(),
             ]);
         } else {
             return response()->json([
@@ -31,19 +31,30 @@ class FormsController extends Controller
         }
     }
 
-    public function get_form_data($id)
+
+
+    public function get_form_data($id, $org_id)
     {
-        $form = formsModel::where('id', $id)->first();
-        if ($form) {
-            return response()->json([
-                "message" => "Form data",
-                "code" => "200",
-                "data" => $form->hasform()->with('form.fields', 'response')->get(),
-            ]);
+        $org = Organisation::where('delete', 0)->find($org_id);
+
+        if ($org) {
+            $form = Form_has_project_has_orga::where('id', $id)->where('org_id',$org_id)->first();
+            if ($form) {
+                return response()->json([
+                    "message" => "Form data",
+                    "code" => "200",
+                    "data" => $form->hasform()->with('structure', 'user', 'form.form.fields', 'response')->get(),
+                ]);
+            } else {
+                return response()->json([
+                    "message" => "Form not found",
+                    "code" => "404"
+                ], 404);
+            }
         } else {
             return response()->json([
-                "message" => "Form not found",
-                "code" => "404"
+                "message" => "Organisation not found",
+                "code" => 404,
             ], 404);
         }
     }
@@ -54,31 +65,23 @@ class FormsController extends Controller
         return response()->json([
             "message" => "Form data",
             "code" => "200",
-            "data" => UserHasForm::with('form.fields', 'response')->where('userid', $user->id)->get(),
+            "data" => UserHasForm::with('structure', 'user', 'form.fields', 'response')->where('userid', $user->id)->get(),
         ]);
     }
 
 
     public function get_by_org($id)
     {
-        $org = Organisation::where('id', $id)->first();
-        if ($org) {
-            $user = Auth::user();
-            if ($user->checkPermission('create_form')) {
-                return response()->json([
-                    "message" => "Forms list",
-                    "code" => "200",
-                    "data" => formsModel::with('organisation', 'project')->where('orgid', $org->id)->where('status', 1)->where('deleted', 0)->get(),
-                ]);
-            } else {
-                return response()->json([
-                    "message" => "not authorized",
-                    "code" => 404,
-                ], 404);
-            }
+        $user = Auth::user();
+        if ($user->checkPermission('create_form')) {
+            return response()->json([
+                "message" => "Forms list",
+                "code" => "200",
+                "data" => formsModel::where('status', 1)->where('deleted', 0)->get(),
+            ]);
         } else {
             return response()->json([
-                "message" => "Organisation not found",
+                "message" => "not authorized",
                 "code" => 404,
             ], 404);
         }
@@ -90,9 +93,7 @@ class FormsController extends Controller
             $request->validate([
                 'title' => 'required',
                 'description' => 'required',
-                'project_id'  => 'required',
                 'type' => 'required',
-                'orgid' => 'required'
             ]);
 
             $projet = ProjetModel::where('id', $request->project_id)->first();
@@ -105,16 +106,14 @@ class FormsController extends Controller
                         'title' => $request->title,
                         'description' => $request->description,
                         'otp_form' => $otp_form,
-                        'project_id'  => $request->project_id,
                         'type' => $request->type,
-                        'orgid' => $request->orgid
                     ];
 
                     $currentform = formsModel::create($form);
                     return response()->json([
                         "message" => "Saved successfully",
                         "code" => 200,
-                        "data" => formsModel::with('organisation', 'project')->where('status', 1)->where('deleted', 0)->find($currentform->id)
+                        "data" => formsModel::where('status', 1)->where('deleted', 0)->find($currentform->id)
                     ], 200);
                 } else {
                     return response()->json([
@@ -136,6 +135,24 @@ class FormsController extends Controller
         }
     }
 
+    public function deployed(Request $request, $id)
+    {
+        $form = formsModel::where('id', $id)->first();
+        if ($form) {
+            $form->deployed = $request->deployed;
+            $form->save();
+            return response()->json([
+                "message" => "Status successfully",
+                "code" => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Form not found",
+                "code" => 404,
+            ], 404);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         $user = Auth::user();
@@ -144,14 +161,12 @@ class FormsController extends Controller
             if ($form) {
                 $form->title = $form->title ? $form->title : $request->title;
                 $form->description = $form->description ? $form->description : $request->description;
-                $form->project_id  = $form->project_id ? $form->project_id : $request->project_id;
                 $form->type =  $form->type ? $form->type : $request->type;
-                $form->orgid =  $form->orgid ? $form->orgid : $request->orgid;
                 $form->save();
                 return response()->json([
                     "message" => "Updated successfully",
                     "code" => 200,
-                    "data" => formsModel::with('organisation', 'project')->where('status', 1)->where('deleted', 0)->find($form->id),
+                    "data" => formsModel::where('status', 1)->where('deleted', 0)->find($form->id),
                 ], 200);
             } else {
                 return response()->json([
@@ -178,7 +193,7 @@ class FormsController extends Controller
                 return response()->json([
                     "message" => "Status successfully",
                     "code" => 200,
-                    "data" => formsModel::with('organisation', 'project')->where('status', 1)->where('deleted', 0)->get()
+                    "data" => formsModel::where('status', 1)->where('deleted', 0)->get()
                 ], 200);
             } else {
                 return response()->json([
@@ -205,7 +220,7 @@ class FormsController extends Controller
                 return response()->json([
                     "message" => "Deleted successfully",
                     "code" => 200,
-                    "data" => formsModel::with('organisation', 'project')->where('status', 1)->where('deleted', 0)->get()
+                    "data" => formsModel::where('status', 1)->where('deleted', 0)->get()
                 ], 200);
             } else {
                 return response()->json([

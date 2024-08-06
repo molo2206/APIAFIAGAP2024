@@ -22,6 +22,7 @@ use App\Http\Controllers\FireBasePushTest;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\FieldTypeController;
 use App\Http\Controllers\FormController;
+use App\Http\Controllers\FormHasProjectHasOrganisation;
 use App\Http\Controllers\FormsController;
 use App\Http\Controllers\GapAppuiController;
 use App\Http\Controllers\Me3nageController;
@@ -35,21 +36,10 @@ use App\Http\Controllers\TagsController;
 use App\Http\Controllers\testForm;
 use App\Http\Controllers\UserHasFormController;
 use App\Models\CategoryPublicattion;
+use App\Models\Form_has_project_has_orga;
 use App\Models\Notifications;
 use Google\Service\AlertCenter\Notification;
 
-/*
-
-
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -259,6 +249,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/projet/gettypevaccin', [ProjetController::class, 'gettypevaccin']);
     Route::get('/projet/get_all_activites/{id}', [ProjetController::class, 'getactivites']);
 
+
     Route::get('/projet/gettype_projet', [ProjetController::class, 'gettype_projet']);
     Route::get('/projet/gettype_impact', [ProjetController::class, 'gettype_impact']);
     Route::get('/projet/getindicateur/{id}', [ProjetController::class, 'getindicateur']);
@@ -281,7 +272,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/form/update/{id}', [FormsController::class, 'update']);
     Route::delete('/form/delete/{id}', [FormsController::class, 'destroy']);
     Route::post('/form/status/{id}', [FormsController::class, 'status']);
-
+    Route::post('/form/deployed/{id}', [FormsController::class, 'deployed']);
+    Route::post('/form_has_project/create', [FormHasProjectHasOrganisation::class, 'create']);
+    Route::get('/form_has_project/list/{id}', [FormHasProjectHasOrganisation::class, 'get_has_form']);
+    Route::get('/form_has_project/list_otp/{otp}', [FormHasProjectHasOrganisation::class, 'getby_otp']);
 
     //Création des types fields
     Route::post('/typefield/create', [FieldTypeController::class, 'store']);
@@ -302,7 +296,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/form_data/create', [UserHasFormController::class, 'store']);
     Route::get('/form_data/show/{id}', [FormsController::class, 'show_form_by_id']);
     Route::get('/data_form/show/{id}', [UserHasFormController::class, 'get_by_stucture']);
-    Route::get('/data_by_form/show/{id}', [FormsController::class, 'get_form_data']);
+    Route::get('/data_by_form/show/{id}/{org_id}', [FormsController::class, 'get_form_data']);
     Route::get('/data_form_by_user', [FormsController::class, 'form_data_by_User']);
 
 
@@ -311,4 +305,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
     Route::get('/field/show/{otp}', [FieldController::class, 'show']);
     Route::get('/field/show_form/{id}', [FieldController::class, 'show_by_id']);
+
+    //Type User
+    Route::post('/typeuser/create', [UserController::class, 'add_type_user']);
+    Route::post('/typeuser/update/{id}', [UserController::class, 'update_type_user']);
+    Route::post('/typeuser/status/{id}', [UserController::class, 'status']);
+    Route::delete('/typeuser/delete/{id}', [UserController::class, 'delete']);
+    Route::get('/typeuser/gettypeuser', [UserController::class, 'index']);
 });

@@ -89,4 +89,10 @@ class User extends Authenticatable
         }
         return $exis;
     }
+
+    public function typeUser()
+    {
+        return $this->belongsToMany(Type_users::class, 'user_has_type', 'userid', 'typeid')->withPivot(["userid", "typeid"]);
+    }
+
 }

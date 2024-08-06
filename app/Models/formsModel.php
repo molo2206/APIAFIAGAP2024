@@ -17,9 +17,8 @@ class formsModel extends Model
         'title',
         'description',
         'otp_form',
-        'project_id',
         'type',
-        'orgid',
+        'deployed'
     ];
 
     public function field(){
@@ -32,13 +31,6 @@ class formsModel extends Model
 
     public function fieldsdata(){
         return $this->hasMany(UserHasForm::class, 'formid', 'id');
-    }
-
-    public function project(){
-        return $this->belongsTo(ProjetModel::class, 'project_id', 'id');
-    }
-    public function organisation(){
-        return $this->belongsTo(Organisation::class, 'orgid', 'id');
     }
     public function hasform(){
         return $this->hasMany(UserHasForm::class, 'formid', 'id');
