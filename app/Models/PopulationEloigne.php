@@ -18,4 +18,8 @@ class PopulationEloigne extends Model
               'localite',
               'nbr',
     ];
+
+    public function gap(){
+        return $this->hasMany(GapsModel::class,'id','gapid');
+    }
 }

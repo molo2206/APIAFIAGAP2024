@@ -31,32 +31,10 @@ class FormsController extends Controller
         }
     }
 
-
-
     public function get_form_data($id, $org_id)
     {
         $org = Organisation::where('delete', 0)->find($org_id);
 
-        if ($org) {
-            $form = Form_has_project_has_orga::where('id', $id)->where('org_id',$org_id)->first();
-            if ($form) {
-                return response()->json([
-                    "message" => "Form data",
-                    "code" => "200",
-                    "data" => $form->hasform()->with('structure', 'user', 'form.form.fields', 'response')->get(),
-                ]);
-            } else {
-                return response()->json([
-                    "message" => "Form not found",
-                    "code" => "404"
-                ], 404);
-            }
-        } else {
-            return response()->json([
-                "message" => "Organisation not found",
-                "code" => 404,
-            ], 404);
-        }
     }
 
     public function form_data_by_User()
@@ -68,7 +46,6 @@ class FormsController extends Controller
             "data" => UserHasForm::with('structure', 'user', 'form.fields', 'response')->where('userid', $user->id)->get(),
         ]);
     }
-
 
     public function get_by_org($id)
     {
@@ -86,6 +63,8 @@ class FormsController extends Controller
             ], 404);
         }
     }
+
+
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -96,40 +75,23 @@ class FormsController extends Controller
                 'type' => 'required',
             ]);
 
-            $projet = ProjetModel::where('id', $request->project_id)->first();
-            $org = Organisation::where('id', $request->orgid)->first();
+            $otp_form = UtilController::generateCode();
+            $form = [
+                'title' => $request->title,
+                'description' => $request->description,
+                'otp_form' => $otp_form,
+                'type' => $request->type,
+            ];
 
-            if ($projet) {
-                if ($org) {
-                    $otp_form = UtilController::generateCode();
-                    $form = [
-                        'title' => $request->title,
-                        'description' => $request->description,
-                        'otp_form' => $otp_form,
-                        'type' => $request->type,
-                    ];
-
-                    $currentform = formsModel::create($form);
-                    return response()->json([
-                        "message" => "Saved successfully",
-                        "code" => 200,
-                        "data" => formsModel::where('status', 1)->where('deleted', 0)->find($currentform->id)
-                    ], 200);
-                } else {
-                    return response()->json([
-                        "message" => "id organization not found",
-                        "code" => 404,
-                    ], 404);
-                }
-            } else {
-                return response()->json([
-                    "message" => "id project not found",
-                    "code" => 404,
-                ], 404);
-            }
+            $currentform = formsModel::create($form);
+            return response()->json([
+                "message" => "Saved successfully",
+                "code" => 200,
+                "data" => formsModel::where('status', 1)->where('deleted', 0)->find($currentform->id)
+            ], 200);
         } else {
             return response()->json([
-                "message" => "not authorized",
+                "message" => "id organization not found",
                 "code" => 404,
             ], 404);
         }

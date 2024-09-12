@@ -74,7 +74,7 @@ class UserHasFormController extends Controller
             ];
 
             $hasform = UserHasForm::create($hasuser);
-            $hasform->response()->detachp();
+            $hasform->response()->detach();
             foreach ($request->response as $item) {
                 $hasform->response()->attach([$hasform->id => [
                     'field_id' => $item['field_id'],

@@ -32,13 +32,15 @@ class OrganisationController extends Controller
                         $logo = UtilController::uploadImageUrl($request->logo, '/uploads/user/');
 
                         Organisation::create([
-                            "name"  => $request->name, "email"  => $request->email,
-                            "phone" => $request->phone, "description"  => $request->description,
+                            "name"  => $request->name,
+                            "email"  => $request->email,
+                            "phone" => $request->phone,
+                            "description"  => $request->description,
                             "logo"  => $logo,
                             "adresse"  => $request->adresse,
                             "sigle" => $request->sigle,
                             "activite"  => null,
-                            "pointfocal"  => null,
+                            "pointfocal"  => $request->pointfocal,
                             "typeorgid"  => $request->typeorgid,
                             "status" => 0,
                             "delete" => 0,
@@ -89,7 +91,6 @@ class OrganisationController extends Controller
             "adresse" => "required|string",
             "sigle" => "required|string",
             "typeorgid" => "required|string",
-            "logo" => "required",
         ]);
         $org = Organisation::where('id', $id)->first();
         if (!$org) {
@@ -99,28 +100,27 @@ class OrganisationController extends Controller
             ], 402);
         } else {
             if ($request->logo) {
-                $logo = UtilController::uploadImageUrl($request->logo, '/uploads/organ/');
-                $org->name  = $request->name;
-                $org->email = $request->email;
-                $org->phone = $request->phone;
-                $org->description = $request->description;
-                $org->logo  = $logo;
-                $org->adresse = $request->adresse;
-                $org->sigle = $request->sigle;
-                $org->typeorgid  = $request->typeorgid;
-                $org->update();
-                Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
-                return response()->json([
-                    "message" => "Cette organisation à été modifier avec succès.",
-                    "code" => 200,
-                    "data" => Organisation::with('type_org')->orderBy('name', 'asc')->get(),
-                ], 200);
+                UtilController::removeImageUrl($org->logo);
+                $logo = UtilController::uploadImageUrl($request->image, "/uploads/organ/");
             } else {
-                return response()->json([
-                    "message" => "Inserer le logo svp!",
-                    "code" => 402,
-                ], 402);
+                $logo = $org->logo;
             }
+            $org->name  =  $request->name;
+            $org->email = $request->email;
+            $org->phone = $request->phone;
+            $org->description = $request->description;
+            $org->logo  = $logo ? $logo : $org->logo;;
+            $org->adresse = $request->adresse;
+            $org->sigle = $request->sigle;
+            $org->typeorgid  = $request->typeorgid;
+            $org->pointfocal  = $request->pointfocal;
+            $org->update();
+            Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
+            return response()->json([
+                "message" => "Cette organisation à été modifier avec succès.",
+                "code" => 200,
+                "data" => $org::with('type_org')->orderBy('name', 'asc')->get(),
+            ], 200);
         }
     }
     public function list_organisation()
@@ -130,6 +130,23 @@ class OrganisationController extends Controller
             "code" => 200,
             "data" => Organisation::with('type_org')->orderBy('name', 'asc')->get(),
         ]);
+    }
+    public function getOneOrg($id)
+    {
+        $org = Organisation::with('type_org')->where('id', $id)->first();
+        if ($org) {
+            return response()->json([
+                "message" => "Organisation trouvée!",
+                "code" => 200,
+                "data" => $org,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Organisation introuvable!",
+                "code" => 404,
+                "data" => null,
+            ], 404);
+        }
     }
     public function addindicateur(Request $request)
     {

@@ -21,8 +21,6 @@ use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\FireBasePushTest;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\FieldTypeController;
-use App\Http\Controllers\FormController;
-use App\Http\Controllers\FormHasProjectHasOrganisation;
 use App\Http\Controllers\FormsController;
 use App\Http\Controllers\GapAppuiController;
 use App\Http\Controllers\Me3nageController;
@@ -33,13 +31,24 @@ use App\Http\Controllers\ScoreCardController;
 use App\Http\Controllers\PublicationsController;
 use App\Http\Controllers\PushNotification;
 use App\Http\Controllers\TagsController;
-use App\Http\Controllers\testForm;
-use App\Http\Controllers\UserHasFormController;
 use App\Models\CategoryPublicattion;
-use App\Models\Form_has_project_has_orga;
 use App\Models\Notifications;
 use Google\Service\AlertCenter\Notification;
+use App\Http\Controllers\UserHasFormController;
+use App\Http\Controllers\FormHasProjectHasOrganisation;
 
+/*
+
+
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -57,12 +66,50 @@ Route::get('/alert/getlastalertvalide', [AlertController::class, 'getlastalertva
 Route::post('/contact/getintouch', [PublicationsController::class, 'contact']);
 Route::get('/configuration/get_infos_organisation', [ConfigurationController::class, 'get_infos_organisation']);
 Route::get('/user/infouseraffectation/{id}', [UserController::class, 'InfosUserByaffectation']);
+Route::post('/to', [FireBasePushTest::class, 'push_to']);
 Route::post('/updatefinger', [UserController::class, 'addfingerprint']);
 Route::get('/users/listeUsers_desk', [UserController::class, 'getUsers']);
-Route::post('/to', [FireBasePushTest::class, 'push_to']);
+
+//Pyramide medical
+Route::get('/listprovince', [Pyramide::class, 'listprovince']);
+Route::get('/listprovince_item', [Pyramide::class, 'all_province_item']);
+Route::get('/aire_item/{id}', [Pyramide::class, 'molo_up']);
+Route::get('/listterritoir/{id}', [Pyramide::class, 'listterritoir']);
+Route::get('/listzon/{id}', [Pyramide::class, 'listzone']);
+Route::get('/listair/{id}', [Pyramide::class, 'listaire']);
+Route::get('/structure/liststructure/{id}', [Pyramide::class, 'liststructure_par_aire']);
+Route::get('/structure/all_structure', [Pyramide::class, 'All_structure']);
+Route::get('/site/get_site_deplace', [Pyramide::class, 'get_site_deplace']);
+Route::get('/maladie/list_maladie', [AlertController::class, 'List_Maladie']);
+Route::get('/gap/pin', [GapsController::class, 'pin']);
+Route::get('/alert/cumul', [AlertController::class, 'Nbr_Alert']);
+Route::get('/alert/all/cumul',[ AlertController::class, 'AllProvince_Nbr_Alert' ]);
+Route::get('/aire/getaire',[ AlertController::class, 'ListAire' ]);
 
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
+    //Pyramide medical
+    Route::post('/addprov', [Pyramide::class, 'addprovince']);
+    Route::post('/updateprov/{id}',[Pyramide::class,'updateprovince']);
+    Route::post('/deleteprov/{id}',[Pyramide::class,'deleteProvince']);
+
+    Route::post('/addter', [Pyramide::class, 'addterritoir']);
+    Route::post('/updateterritoir/{id}',[Pyramide::class,'updateTerritoir']);
+    Route::post('/deleteterritoir/{id}',[Pyramide::class,'deleteTerritoir']);
+
+    Route::post('/addzon', [Pyramide::class, 'addzone']);
+    Route::post('/updatezon/{id}',[Pyramide::class,'updateZone']);
+    Route::post('/deletezon/{id}', [Pyramide::class, 'deleteZone']);
+
+    Route::post('/addair', [Pyramide::class, 'addaire']);
+    Route::post('/updateair/{id}',[Pyramide::class,'updateAire']);
+    Route::post('/deleteair/{id}', [Pyramide::class, 'deleteAire']);
+
+    Route::post('/structure/addstructure', [Pyramide::class, 'addstructure']);
+    Route::post('/structure/update/{id}', [Pyramide::class, 'updatestructure']);
+    Route::post('/structure/delete/{id}', [Pyramide::class, 'deleteStructure']);
+
+    Route::post('/site/create_site_deplace', [Pyramide::class, 'create_site_deplace']);
 
     Route::post('/affectation/addaffectation', [AffectationController::class, 'Affectation']);
     Route::post('/permission/addpermission', [AffectationController::class, 'create_permission']);
@@ -123,23 +170,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/org_ind', [OrganisationController::class, 'org_indicateur']);
     Route::get('/list_org', [OrganisationController::class, 'list_organisation']);
     Route::get('/liste_indicateur', [OrganisationController::class, 'listeIndicateur']);
+    Route::get('/org/get_one_org/{id}', [OrganisationController::class, 'getOneOrg']);
 
-    //Pyramide medical
-    Route::post('/addprov', [Pyramide::class, 'addprovince']);
-    Route::get('/listprovince', [Pyramide::class, 'listprovince']);
-    Route::get('/listprovince_item', [Pyramide::class, 'all_province_item']);
-    Route::get('/aire_item/{id}', [Pyramide::class, 'molo_up']);
-    Route::post('/addter', [Pyramide::class, 'addterritoir']);
-    Route::get('/listterritoir/{id}', [Pyramide::class, 'listterritoir']);
-    Route::post('/addzon', [Pyramide::class, 'addzone']);
-    Route::get('/listzon/{id}', [Pyramide::class, 'listzone']);
-    Route::post('/addair', [Pyramide::class, 'addaire']);
-    Route::get('/listair/{id}', [Pyramide::class, 'listaire']);
-    Route::post('/structure/addstructure', [Pyramide::class, 'addstructure']);
-    Route::get('/structure/liststructure/{id}', [Pyramide::class, 'liststructure_par_aire']);
-    Route::get('/structure/all_structure', [Pyramide::class, 'All_structure']);
-    Route::post('/site/create_site_deplace', [Pyramide::class, 'create_site_deplace']);
-    Route::get('/site/get_site_deplace', [Pyramide::class, 'get_site_deplace']);
     //Gap medical
     Route::post('/gap/sendGap', [GapsController::class, 'AddGap']);
     Route::post('/gap/sendImageGap/{id}', [GapsController::class, 'Imagegap']);
@@ -151,7 +183,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/gap/listgap_by_user/{id}', [GapsController::class, 'listGapByuser']);
     Route::get('/gap/listgap_valide_byuser/{id}', [GapsController::class, 'listGapValideByuser']);
     Route::get('/gap/list_gap_validerepondu/{id}', [GapsController::class, 'listGapValideRepondu']);
-    Route::get('/gap/listgap_valide/{id}', [GapsController::class, 'listGapValide']);
     Route::get('/gap/listgap1', [GapsController::class, 'listgap1']);
 
     Route::get('/gap/listgap_province/{id}', [GapsController::class, 'listGapProvince']);
@@ -249,7 +280,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/projet/gettypevaccin', [ProjetController::class, 'gettypevaccin']);
     Route::get('/projet/get_all_activites/{id}', [ProjetController::class, 'getactivites']);
 
-
     Route::get('/projet/gettype_projet', [ProjetController::class, 'gettype_projet']);
     Route::get('/projet/gettype_impact', [ProjetController::class, 'gettype_impact']);
     Route::get('/projet/getindicateur/{id}', [ProjetController::class, 'getindicateur']);
@@ -272,10 +302,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/form/update/{id}', [FormsController::class, 'update']);
     Route::delete('/form/delete/{id}', [FormsController::class, 'destroy']);
     Route::post('/form/status/{id}', [FormsController::class, 'status']);
+    Route::get('/form/show/{id}', [FormsController::class, 'show']);
     Route::post('/form/deployed/{id}', [FormsController::class, 'deployed']);
     Route::post('/form_has_project/create', [FormHasProjectHasOrganisation::class, 'create']);
     Route::get('/form_has_project/list/{id}', [FormHasProjectHasOrganisation::class, 'get_has_form']);
     Route::get('/form_has_project/list_otp/{otp}', [FormHasProjectHasOrganisation::class, 'getby_otp']);
+
+
 
     //Création des types fields
     Route::post('/typefield/create', [FieldTypeController::class, 'store']);
@@ -298,13 +331,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/data_form/show/{id}', [UserHasFormController::class, 'get_by_stucture']);
     Route::get('/data_by_form/show/{id}/{org_id}', [FormsController::class, 'get_form_data']);
     Route::get('/data_form_by_user', [FormsController::class, 'form_data_by_User']);
-
-
-    Route::get('/field/list', [FieldController::class, 'index']);
-    Route::post('/field/status/{id}', [FieldController::class, 'status']);
-    Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
-    Route::get('/field/show/{otp}', [FieldController::class, 'show']);
-    Route::get('/field/show_form/{id}', [FieldController::class, 'show_by_id']);
 
     //Type User
     Route::post('/typeuser/create', [UserController::class, 'add_type_user']);

@@ -13,5 +13,10 @@ class RoleModel extends Model
     protected $table="t_roles";
     protected $fillable = [
         'name',
+        'orgid',
     ];
+
+    public function organisation(){
+         return $this->belongsTo(Organisation::class,'orgid','id');
+    }
 }

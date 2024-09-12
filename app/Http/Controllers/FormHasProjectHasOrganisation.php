@@ -44,7 +44,7 @@ class FormHasProjectHasOrganisation extends Controller
     {
         $user = Auth::user();
         if (Organisation::find($id)) {
-            if ($user->checkPermission('create_form')) {
+            if ($user->checkPermission('view_alert')) {
                 return response()->json([
                     "message" => "Data created successfully",
                     "code" => 200,

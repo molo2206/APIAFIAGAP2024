@@ -227,6 +227,13 @@ class GapsController extends Controller
                                                     }
                                                 }
                                             }
+                                            // if ($user->checkPermission('create_gap')) {
+
+                                            // }
+                                            // $dataToken_for_user = TokenUsers::all();
+                                            // foreach ($dataToken_for_user as $item) {
+                                            //     PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+                                            // }
 
                                             return response()->json([
                                                 "message" => 'Traitement réussi avec succès!',
@@ -1063,21 +1070,21 @@ class GapsController extends Controller
                                                     }
                                                 }
 
-                                                $image = env('IMAGE_GAP');
-                                                $dataToken_for_user = TokenUsers::all();
-                                                foreach ($dataToken_for_user as $item) {
-                                                    PushNotification::sendPushNotification($item->token, "Un gap a été mise en ligne par Cosamed", $bloc1->title, $image);
-                                                }
+                                                // $image = env('IMAGE_GAP');
+                                                // $dataToken_for_user = TokenUsers::all();
+                                                // foreach ($dataToken_for_user as $item) {
+                                                //     PushNotification::sendPushNotification($item->token, "Un gap a été mise en ligne par Cosamed", $bloc1->title, $image);
+                                                // }
 
-                                                foreach (User::get() as $key => $value) {
-                                                    Notifications::create([
-                                                        "user_id" => $value->id,
-                                                        "title" => "Un gap a été mise en ligne par Cosamed",
-                                                        "description" => "Un gap appuyé a été mise en ligne par Cosamed.".'/'. $bloc1->title,
-                                                        "id_type" => $bloc1->id,
-                                                        "type" => "gap"
-                                                    ]);
-                                                }
+                                                // foreach (User::get() as $key => $value) {
+                                                //     Notifications::create([
+                                                //         "user_id" => $value->id,
+                                                //         "title" => "Un gap a été mise en ligne par Cosamed",
+                                                //         "description" => "Un gap appuyé a été mise en ligne par Cosamed." . '/' . $bloc1->title,
+                                                //         "id_type" => $bloc1->id,
+                                                //         "type" => "gap"
+                                                //     ]);
+                                                // }
 
                                                 return response()->json([
                                                     "message" => 'Traitement réussi avec succès!',
@@ -1566,8 +1573,22 @@ class GapsController extends Controller
         }
     }
 
+    // public function getlastgapvalide()
+    // {
+    //     return response()->json([
+    //         "message" => 'Derniers gap validés par structure',
+    //         "code" => 200,
+    //         "data" => GapsModel::with(
+    //             'datauser',
+    //         )->orderby('dateadd', 'desc')->where('deleted', 0)->whereNot('children', null)->get()
+    //     ]);
+    // }
     public function getlastgapvalide()
     {
+
+        $dt = new DateTime();
+        $startDate = $dt->format('Y-m-d');
+
         return response()->json([
             "message" => 'Derniers gap validés par structure',
             "code" => 200,
@@ -1590,7 +1611,6 @@ class GapsController extends Controller
                 'gap_appuis'
             )->orderby('dateadd', 'desc')->where('deleted', 0)->whereNot('children', null)->get()
         ]);
-
     }
     public function deleteImageGap($id)
     {
@@ -1745,6 +1765,151 @@ class GapsController extends Controller
             "message" => "Success",
             "code" => 200,
             "data" => $gap_appuis
+        ], 200);
+    }
+
+    public function pin(Request $request)
+    {
+        $province = $request->get('province') ? $request->get('province') : "all";
+        $territoir = $request->get('territoir') ? $request->get('territoir') : "all";
+        $zone = $request->get('zone') ? $request->get('zone') : "all";
+        $aire = $request->get('aire') ? $request->get('aire') : "all";
+        $structure = $request->get('structure') ? $request->get('structure') :  "all";
+        $type = $request->get('type') ? $request->get('type') : "all";
+
+        if ($province == "all") {
+            $allgap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)->whereNot('children', null)->getQuery();
+            $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)->whereNot('children', null)->get();
+        } else {
+            $allgap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)
+                ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->getQuery();
+            $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->get();
+            if ($territoir == "all") {
+                $allgap = $allgap;
+                $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->get();
+            } else {
+                $allgap = GapsModel::with('datapopulationEloigne')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                    ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->getQuery();
+                $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                    ->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)->whereNot('children', null)->get();
+                if ($zone == "all") {
+                    $allgap =  $allgap;
+                    $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)->whereNot('children', null)->get();
+                } else {
+                    $allgap = GapsModel::with('datapopulationEloigne')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante', 'id', $zone)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->whereNot('children', null)->getQuery();
+                    $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante', 'id', $zone)
+                        ->whereNot('children', null)->get();
+                    if ($aire == "all") {
+                        $allgap =  $allgap;
+                        $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereNot('children', null)->get();
+                    } else {
+                        $allgap =  GapsModel::with('datapopulationEloigne')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereRelation('dataaire', 'id', $aire)->whereNot('children', null)
+                            ->getQuery();
+                        $gap = GapsModel::with('datapopulationEloigne')->where('status', 1)->where('deleted', 0)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire', 'id', $aire)->whereNot('children', null)->get();
+                    }
+                }
+            }
+        }
+        $startOfLastWeek = date("Y-m-d");
+        $endOfLastWeek = date_create($startOfLastWeek)->modify('-7 days')->format('Y-m-d');
+
+        if ($type === "all") {
+
+            $data = [
+                "data" => [
+                    "population" => $allgap->get()->sum("population"),
+                    "deplace" =>  $allgap->get()->sum("pop_deplace"),
+                    "retourne" => $allgap->get()->sum("pop_retourne"),
+                    "eloigne" =>  $gap,
+                ],
+                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get()
+            ];
+        }
+
+        if ($type === "population") {
+            $weeks = [];
+            for ($i = 1; $i <= 52; $i++) {
+                array_push($weeks, [
+                    "week" => $i,
+                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("population")
+                ]);
+            }
+            $data = [
+                "data" => [
+                    "population" => $allgap->get()->sum("population"),
+                ],
+                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get(),
+                "weeks" => $weeks
+            ];
+        }
+
+        if ($type === "deplace") {
+            $weeks = [];
+            for ($i = 1; $i <= 52; $i++) {
+                array_push($weeks, [
+                    "week" => $i,
+                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("pop_deplace")
+                ]);
+            }
+            $data = [
+                "data" => [
+                    "deplace" => $allgap->get()->sum("pop_deplace"),
+                ],
+                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get(),
+                "weeks" => $weeks
+            ];
+        }
+
+        if ($type === "retourne")
+        {
+            $weeks = [];
+            for ($i = 1; $i <= 52; $i++) {
+                array_push($weeks, [
+                    "week" => $i,
+                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("pop_retourne")
+                ]);
+            }
+            $data = [
+                "data" => [
+                    "retourne" => $allgap->get()->sum("pop_retourne"),
+                ],
+                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get(),
+                "weeks" => $weeks
+            ];
+        }
+
+        if ($type === "eloigne") {
+            $data = [
+                "data" => [
+                    "eloigne" =>  $gap,
+                ],
+                "total_by_month" => [],
+            ];
+        }
+
+        return response([
+            "message" => "Success",
+            "code" => 200,
+            "data" => $data
         ], 200);
     }
 }

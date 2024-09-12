@@ -61,4 +61,6 @@ class AlertModel extends Model
         return $this->belongsToMany(ImageAlertModel::class, 't_image_alert', 'alertid', 'image')
         ->withPivot(["alertid"])->as('images_alert');
     }
+
+
 }

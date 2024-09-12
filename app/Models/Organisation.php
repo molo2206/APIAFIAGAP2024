@@ -42,10 +42,6 @@ class Organisation extends Model
         return $this->belongsTo(typeorg::class, 'typeorgid','id');
     }
 
-    public function data(){
-        return $this->hasMany(Form_has_project_has_orga::class, 'org_id', 'id');
-    }
-
 //================================================================================================
 
 public function databeneficecible()

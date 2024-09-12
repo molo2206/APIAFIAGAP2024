@@ -30,4 +30,5 @@ class org_indicateur extends Model
     {
         return $this->belongsTo(indicateur::class, 'indicateurid','id');
     }
+
 }

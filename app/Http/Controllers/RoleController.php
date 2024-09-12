@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AffectationModel;
 use App\Models\AffectationPermission;
+use App\Models\Organisation;
 use App\Models\Permission;
 use App\Models\RoleModel;
 use Illuminate\Http\Request;
@@ -26,13 +27,13 @@ class RoleController extends Controller
         if ($organisation) {
             if ($permission_gap) {
                 if ($user) {
-                    if (!RoleModel::where('name', $request->name)->exists()) {
+                    if (!RoleModel::where('name', $request->name)->where('orgid', $orgid)->exists()) {
                         $role = RoleModel::create([
                             "name" => $request->name,
+                            "orgid" => $orgid,
                         ]);
                         return response()->json([
                             "message" => "Création du role réussie"
-                            
                         ], 200);
                     } else {
                         return response()->json([
@@ -77,6 +78,7 @@ class RoleController extends Controller
                     $role = RoleModel::find($id);
                     if ($role) {
                         $role->name = $request->name;
+                        $role->orgid  = $request->orgid;
                         $role->save();
                         return response()->json([
                             "message" => "La modification du role réussie"
@@ -154,14 +156,29 @@ class RoleController extends Controller
 
     public function list_roles($orgid)
     {
-       
-                    $allrole = RoleModel::where('deleted',0)->get();
-                    return response()->json([
-                        "message" => "Liste des roles!",
-                        "data" => $allrole,
-                        "code" => 200,
-                    ], 200);
-               
-           
+
+        $allrole = RoleModel::with('organisation')->where('deleted', 0)->get();
+        return response()->json([
+            "message" => "Liste des roles!",
+            "data" => $allrole,
+            "code" => 200,
+        ], 200);
+    }
+
+    public function list_role_by_org($orgid)
+    {
+        if (Organisation::where('id', $orgid)->first()) {
+            $allrole = RoleModel::with('organisation')->where('')->where('deleted', 0)->get();
+            return response()->json([
+                "message" => "Liste des roles!",
+                "data" => $allrole,
+                "code" => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Cette organisationid" . $orgid . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
     }
 }

@@ -12,6 +12,8 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
+        "@stripe/react-stripe-js": "^2.8.0",
+        "@stripe/stripe-js": "^4.3.0",
         "normalize.css": "^8.0.1"
     }
 }

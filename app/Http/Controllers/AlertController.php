@@ -7,6 +7,7 @@ use App\Models\AffectationPermission;
 use App\Models\airesante;
 use App\Models\AlertModel;
 use App\Models\ImageAlertModel;
+use App\Models\Maladie;
 use App\Models\Notifications;
 use App\Models\Permission;
 use App\Models\province;
@@ -14,9 +15,11 @@ use App\Models\territoir;
 use App\Models\TokenUsers;
 use App\Models\User;
 use App\Models\zonesante;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use DateTime;
+use Illuminate\Support\Facades\DB;
 
 class AlertController extends Controller
 {
@@ -202,21 +205,22 @@ class AlertController extends Controller
                                             ]]);
                                         }
                                     }
-                                    $image = env('IMAGE_ALERT');
-                                    $dataToken_for_user = TokenUsers::all();
-                                    foreach ($dataToken_for_user as $item) {
-                                        PushNotification::sendPushNotification($item->token, "Une alerte a été mise en ligne par Cosamed", $alert->title, $image);
-                                    }
 
-                                    foreach (User::get() as $key => $value) {
-                                        Notifications::create([
-                                            "user_id" => $value->id,
-                                            "title" => "Une alerte a été mise en ligne par Cosamed",
-                                            "description" => "Une alerte a été lancée" . "au niveau de " . $alert->localisation,
-                                            "id_type" => $alert->id,
-                                            "type" => "gap"
-                                        ]);
-                                    }
+                                    // $image = env('IMAGE_ALERT');
+                                    // $dataToken_for_user = TokenUsers::all();
+                                    // foreach ($dataToken_for_user as $item) {
+                                    //     PushNotification::sendPushNotification($item->token, "Une alerte a été mise en ligne par Cosamed", $alert->title, $image);
+                                    // }
+
+                                    // foreach (User::get() as $key => $value) {
+                                    //     Notifications::create([
+                                    //         "user_id" => $value->id,
+                                    //         "title" => "Une alerte a été mise en ligne par Cosamed",
+                                    //         "description" => "Une alerte a été lancée" . "au niveau de " . $alert->localisation,
+                                    //         "id_type" => $alert->id,
+                                    //         "type" => "gap"
+                                    //     ]);
+                                    // }
 
                                     return response()->json([
                                         "message" => 'Alert investiguée avec succès!',
@@ -732,5 +736,621 @@ class AlertController extends Controller
                 "code" => 402,
             ], 402);
         }
+    }
+    public function List_Maladie()
+    {
+        return response()->json([
+            "message" => 'Traitement réussi avec succès!',
+            "code" => 200,
+            "data" => Maladie::whereHas('alert')->get()
+        ], 200);
+    }
+
+    public function Nbr_Alert(Request $request)
+    {
+        $province = $request->get('province') ? $request->get('province') : "all";
+        $territoir = $request->get('territoir') ? $request->get('territoir') : "all";
+        $zone = $request->get('zone') ? $request->get('zone') : "all";
+        $aire = $request->get('aire') ? $request->get('aire') : "all";
+        $maladie = $request->get('maladie') ? $request->get('maladie') :  "all";
+        $type = $request->get('type');
+
+        if ($maladie == "all") {
+            if ($province == "all") {
+                $allalert = AlertModel::where('status', 1)->where('deleted', 0)->whereNot('children', null)->getQuery();
+            } else {
+                $allalert = AlertModel::with('dataaire.zonesante.territoir.province')->where('status', 1)->where('deleted', 0)
+                    ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->getQuery();
+                if ($territoir == "all") {
+                    $allalert = $allalert;
+                } else {
+                    $allalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)->whereNot('children', null)->getQuery();
+                    if ($zone == "all") {
+                        $allalert =  $allalert;
+                    } else {
+                        $allalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereNot('children', null)->getQuery();
+
+                        if ($aire == "all") {
+                            $allalert =  $allalert;
+                        } else {
+                            $allalert =  AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                                ->whereRelation('dataaire.zonesante', 'id', $zone)
+                                ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                                ->whereRelation('dataaire', 'id', $aire)->whereNot('children', null)
+                                ->getQuery();
+                        }
+                    }
+                }
+            }
+        } else {
+            if ($province == "all") {
+                $allalert = AlertModel::where('status', 1)->where('deleted', 0)
+                    ->where('maladieid', $maladie)->whereNot('children', null)->getQuery();
+            } else {
+                $allalert = AlertModel::with('dataaire.zonesante.territoir.province')->where('status', 1)->where('deleted', 0)
+                    ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                    ->where('maladieid', $maladie)->whereNot('children', null)->getQuery();
+                if ($territoir == "all") {
+                    $allalert = $allalert;
+                } else {
+                    $allalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->where('maladieid', $maladie)->whereNot('children', null)->getQuery();
+                    if ($zone == "all") {
+                        $allalert =  $allalert;
+                    } else {
+                        $allalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->where('maladieid', $maladie)->whereNot('children', null)->getQuery();
+
+                        if ($aire == "all") {
+                            $allalert =  $allalert;
+                        } else {
+                            $allalert =  AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                                ->whereRelation('dataaire.zonesante', 'id', $zone)
+                                ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                                ->whereRelation('dataaire', 'id', $aire)->where('maladieid', $maladie)
+                                ->whereNot('children', null)->getQuery();
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($maladie == "all") {
+            if ($province == "all") {
+                $dataalert = AlertModel::where('status', 1)->where('deleted', 0)->whereNot('children', null)->getQuery();
+            } else {
+                $dataalert = AlertModel::with('dataaire.zonesante.territoir.province')->where('status', 1)->where('deleted', 0)
+                    ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                    ->whereNot('children', null)->getQuery();
+                if ($territoir == "all") {
+                    $dataalert = $dataalert;
+                } else {
+                    $dataalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->whereNot('children', null)->getQuery();
+                    if ($zone == "all") {
+                        $dataalert =  $dataalert;
+                    } else {
+                        $dataalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereNot('children', null)->getQuery();
+                    }
+                }
+            }
+        } else {
+            if ($province == "all") {
+                $dataalert = AlertModel::where('status', 1)->where('deleted', 0)
+                    ->where('maladieid', $maladie)->whereNot('children', null)->getQuery();
+            } else {
+                $dataalert = AlertModel::with('dataaire.zonesante.territoir.province')->where('status', 1)
+                    ->whereNot('children', null)->where('deleted', 0)
+                    ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                    ->whereNot('children', null)->where('maladieid', $maladie)->getQuery();
+                if ($territoir == "all") {
+                    $dataalert = $dataalert;
+                } else {
+                    $dataalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                        ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                        ->whereNot('children', null)->where('maladieid', $maladie)->getQuery();
+                    if ($zone == "all") {
+                        $dataalert =  $dataalert;
+                    } else {
+                        $dataalert = AlertModel::with('dataaire')->whereRelation('dataaire.zonesante.territoir', 'id', $territoir)
+                            ->whereRelation('dataaire.zonesante', 'id', $zone)
+                            ->whereRelation('dataaire.zonesante.territoir.province', 'id', $province)
+                            ->whereNot('children', null)->where('maladieid', $maladie)->getQuery();
+                    }
+                }
+            }
+        }
+
+        $startOfLastWeek = date("Y-m-d");
+        $endOfLastWeek = date_create($startOfLastWeek)->modify('-7 days')->format('Y-m-d');
+
+        if ($type == "cases") {
+            $data = [
+                "total" => $allalert->get()->sum("nbr_touche"),
+                "dataaire" =>
+                $dataalert->groupBy('airid')->selectRaw('sum(nbr_touche)as total,airid')->get(),
+                "total_seven_day" => $allalert->get()->whereBetween('datealert', [
+                    $endOfLastWeek,
+                    $startOfLastWeek
+                ])->sum('nbr_touche'),
+                "total_by_month" => $allalert->orderBy('datealert')->selectRaw(
+                    "sum(nbr_touche) as total,
+                    DATE_FORMAT(datealert,'%M') as month"
+                )->whereYear('datealert', date('Y'))
+                    ->groupBy('month')->get(),
+                "weeks" => []
+            ];
+        }
+
+        if ($type == "deaths") {
+            $data = [
+                "total" => $allalert->get()->sum("nbr_dece"),
+                "dataaire" =>
+                $dataalert->groupBy('airid')->selectRaw('sum(nbr_dece)as total,airid')->get(),
+                "total_seven_day" => $allalert->get()->whereBetween('datealert', [
+                    $endOfLastWeek,
+                    $startOfLastWeek
+                ])->sum('nbr_dece'),
+                "total_by_month" => $allalert->orderBy('datealert')->selectRaw(
+                    "sum(nbr_dece) as total,
+                    DATE_FORMAT(datealert,'%M') as month"
+                )->whereYear('datealert', date('Y'))
+                    ->groupBy('month')->get()
+            ];
+        }
+
+        if ($type == "sick-animals") {
+            $data = [
+                "total" => $allalert->get()->sum("nb_animal_malade"),
+                "dataaire" =>
+                $dataalert->groupBy('airid')->selectRaw('sum(nb_animal_malade)as total,airid')->get(),
+                "total_seven_day" => $allalert->get()->whereBetween('datealert', [
+                    $endOfLastWeek,
+                    $startOfLastWeek
+                ])->sum('nb_animal_malade'),
+                "total_by_month" => $allalert->orderBy('datealert')->selectRaw(
+                    "sum(nbr_dece) as total,
+                    DATE_FORMAT(datealert,'%M') as month"
+                )->whereYear('datealert', date('Y'))
+                    ->groupBy('month')->get()
+            ];
+        }
+
+        if ($type == "dead-animals") {
+            $data = [
+                "total" => $allalert->get()->sum("nb_animal_mort"),
+                "dataaire" =>
+                $dataalert->groupBy('airid')->selectRaw('sum(nb_animal_mort)as total,airid')->get(),
+                "total_seven_day" => $allalert->get()->whereBetween('datealert', [
+                    $endOfLastWeek,
+                    $startOfLastWeek
+                ])->sum('nb_animal_mort'),
+                "total_by_month" => $allalert->orderBy('datealert')->selectRaw(
+                    "sum(nbr_dece) as total,
+                    DATE_FORMAT(datealert,'%M') as month"
+                )->whereYear('datealert', date('Y'))
+                    ->groupBy('month')->get()
+
+            ];
+        }
+
+
+        return response()->json([
+            "message" => "Liste des alerts",
+            "code" => "200",
+            "data" => $data,
+        ], 200);
+    }
+    public function AllProvince_Nbr_Alert(Request $request)
+    {
+        $province = $request->get('province') ? $request->get('province') : "all";
+        $territoir = $request->get('territoir') ? $request->get('territoir') : "all";
+        $zone = $request->get('zone') ? $request->get('zone') : "all";
+        $aire = $request->get('aire') ? $request->get('aire') : "all";
+        $maladie = $request->get('maladie') ? $request->get('maladie') :  "all";
+        $type = $request->get('type');
+
+
+        if ($maladie == "all") {
+            $allalert = AlertModel::where('t_alert.status', 1)->where('t_alert.deleted', 0)->whereNot('t_alert.children', null)
+                ->join('t_aire_sante', 't_alert.airid', '=', 't_aire_sante.id')
+                ->join('t_zone', 't_aire_sante.zoneid', '=', 't_zone.id')
+                ->join('t_territoire', 't_zone.territoirid', '=', 't_territoire.id')
+                ->join('t_province', 't_territoire.provinceid', '=', 't_province.id')
+                ->select(
+                    't_aire_sante.id',
+                    't_alert.nbr_touche',
+                    't_province.id as province',
+                    't_territoire.id as territoire',
+                    't_zone.id as zone',
+                    't_aire_sante.id as aire',
+                    't_alert.nb_animal_mort',
+                    't_alert.nb_animal_malade',
+                    't_alert.nbr_dece',
+                    't_alert.datealert',
+                    't_alert.maladieid',
+                    't_alert.id as alertid'
+                )->get();
+            if ($province == "all") {
+                if ($type == "cases") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nbr_touche')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "deaths") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nbr_dece')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "sick-animals") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nb_animal_malade')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+                if ($type == "dead-animals") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nb_animal_mort')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+            } else {
+
+                if ($type == "cases") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nbr_touche')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "deaths") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nbr_dece')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "sick-animals") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nb_animal_malade')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+
+                if ($type == "dead-animals") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nb_animal_mort')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+                if ($territoir == "all") {
+                    $data = $data;
+                } else {
+                    $data = $data;
+                    if ($zone == "all") {
+                        $data = $data;
+                    } else {
+                        if ($type == "cases") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nbr_touche')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+
+                        if ($type == "deaths") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nbr_dece')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+
+                        if ($type == "sick-animals") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nb_animal_malade')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+                        if ($type == "dead-animals") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nb_animal_mort')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+                    }
+                }
+            }
+        } else {
+            $allalert = AlertModel::where('t_alert.status', 1)->where('t_alert.maladieid',$maladie)->where('t_alert.deleted', 0)->whereNot('t_alert.children', null)
+                ->join('t_aire_sante', 't_alert.airid', '=', 't_aire_sante.id')
+                ->join('t_zone', 't_aire_sante.zoneid', '=', 't_zone.id')
+                ->join('t_territoire', 't_zone.territoirid', '=', 't_territoire.id')
+                ->join('t_province', 't_territoire.provinceid', '=', 't_province.id')
+                ->select(
+                    't_aire_sante.id',
+                    't_alert.nbr_touche',
+                    't_province.id as province',
+                    't_territoire.id as territoire',
+                    't_zone.id as zone',
+                    't_aire_sante.id as aire',
+                    't_alert.nb_animal_mort',
+                    't_alert.nb_animal_malade',
+                    't_alert.nbr_dece',
+                    't_alert.datealert',
+                    't_alert.maladieid',
+                    't_alert.id as alertid'
+                )->get();
+            if ($province == "all") {
+                if ($type == "cases") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nbr_touche')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "deaths") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nbr_dece')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "sick-animals") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nb_animal_malade')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+                if ($type == "dead-animals") {
+                    $allprovince = [];
+                    foreach (province::all() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('province', $value->id)->sum('nb_animal_mort')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+            } else {
+
+                if ($type == "cases") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nbr_touche')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "deaths") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nbr_dece')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+                if ($type == "sick-animals") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nb_animal_malade')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+
+
+                if ($type == "dead-animals") {
+                    $allprovince = [];
+                    foreach (zonesante::whereRelation('territoir.province', 'id', $province)->get() as $key => $value) {
+                        array_push($allprovince, [
+                            "nom" => $value->name,
+                            "total" => $allalert->where('zone', $value->id)->sum('nb_animal_mort')
+                        ]);
+                    }
+                    $data = [
+                        "allprovince" => $allprovince
+                    ];
+                }
+                if ($territoir == "all") {
+                    $data = $data;
+                } else {
+                    $data = $data;
+                    if ($zone == "all") {
+                        $data = $data;
+                    } else {
+                        if ($type == "cases") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nbr_touche')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+
+                        if ($type == "deaths") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nbr_dece')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+
+                        if ($type == "sick-animals") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nb_animal_malade')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+                        if ($type == "dead-animals") {
+                            $allprovince = [];
+                            foreach (airesante::whereRelation('zonesante', 'id', $zone)->get() as $key => $value) {
+                                array_push($allprovince, [
+                                    "nom" => $value->name,
+                                    "total" => $allalert->where('id', $value->id)->sum('nb_animal_mort')
+                                ]);
+                            }
+                            $data = [
+                                "allprovince" => $allprovince
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        return response()->json([
+            "message" => "Liste des alerts",
+            "code" => "200",
+            "data" => $data,
+        ], 200);
+    }
+    public function ListAire()
+    {
+        $allaire = airesante::get();
+        return response()->json([
+            "message" => "Liste aires santes!",
+            "data" => $allaire,
+            "code" => 200,
+        ], 200);
     }
 }

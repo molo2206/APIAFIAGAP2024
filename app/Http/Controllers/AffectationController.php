@@ -10,8 +10,10 @@ use App\Models\RoleModel;
 use App\Models\Type_users;
 use App\Models\User;
 use App\Models\User_has_Type;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AffectationController extends Controller
 {
@@ -46,16 +48,12 @@ class AffectationController extends Controller
                     $affectation->roleid = $request->roleid;
                     $affectation->userid = $request->userid;
                     $affectation->save();
-
-                    $user_ = User::find('id', $request->userid);
-                    $type =  Type_users::where('name', 'admin')->first();
-
-                    if ($user) {
-                        User_has_Type::create([
-                            'userid' => $user_->id,
-                            'typeid' => $type->id,
-                        ]);
-                    }
+                    Log::channel(channel: 'slack')->critical(message: $user);
+                    // $type =  Type_users::where('name', 'admin')->first();
+                    // User_has_Type::create([
+                    //     'userid' => $request->userid,
+                    //     'typeid' => $type->id,
+                    // ]);
 
                     return response()->json([
                         "message" => "Affctation réussie avec succèss",
@@ -72,6 +70,16 @@ class AffectationController extends Controller
                                     'roleid' => $request->roleid,
                                     'userid' => $request->userid,
                                 ]);
+                                Log::channel(channel: 'slack')->critical($aff);
+                                $type =  Type_users::where('name', 'admin')->first();
+                                $user = User::where('id', $aff->userid)->first();
+                                if (!$user->typeUser()->where('name', 'admin')->exists()) {
+                                    User_has_Type::create([
+                                        'userid' => $aff->userid,
+                                        'typeid' => $type->id,
+                                    ]);
+                                }
+
                                 return response()->json([
                                     "message" => "Affctation réussie avec succès",
                                     "data" => AffectationModel::with('user.type_user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
@@ -269,6 +277,8 @@ class AffectationController extends Controller
                         $affectationpermission->delete();
                     }
                 }
+
+
                 return response()->json([
                     "message" => "Permission rétirée avec succès",
                 ], 200);
@@ -313,9 +323,19 @@ class AffectationController extends Controller
                             ]
                         ]);
                     }
+                    Log::channel(channel: 'slack')->critical($affectation);
+                    $type =  Type_users::where('name', 'admin')->first();
+                    $user = User::where('id', $affectation->userid)->first();
+
+                    if (!$user->typeUser()->where('name', 'admin')->exists()) {
+                        User_has_Type::create([
+                            'userid' => $user->id,
+                            'typeid' => $type->id,
+                        ]);
+                    }
+
                     return response()->json([
                         "message" => "Permission accordée",
-
                     ], 200);
                 } else {
                     return response()->json([

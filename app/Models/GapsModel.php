@@ -74,12 +74,6 @@ class GapsModel extends Model
         return $this->hasMany(PartenairePresntModel::class, 'gapid', 'id');
     }
 
-    public function permissions()
-    {
-        return $this->belongsToMany(indicat::class, 'role_has_permissions', 'role_id', 'permission_id')->withPivot(['create','read','update','delete'])->as('access')->where('deleted', 0)->where('status', 1);
-    }
-
-
     public function datatypepersonnel()
     {
         return $this->hasMany(PersonnelGap::class, 'gapid', 'id');

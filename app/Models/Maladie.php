@@ -20,4 +20,8 @@ class Maladie extends Model
         "deleted"
     ];
 
+    public function alert(){
+        return $this->hasMany(AlertModel::class,'maladieid','id');
+    }
+
 }

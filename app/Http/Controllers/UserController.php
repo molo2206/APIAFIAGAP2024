@@ -368,6 +368,7 @@ class UserController extends Controller
                                 $change->update([
                                     "status" => 1,
                                 ]);
+
                                 Mail::to($request->email)->send(new Createcount($request->email, $request->pswd));
                                 $token = $user->createToken("accessToken")->plainTextToken;
                                 Log::channel(channel: 'slack')->critical(message: $user);

@@ -39,6 +39,43 @@ class Pyramide extends Controller
         }
     }
 
+    public function updateprovince(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+        ]);
+        $province = province::find($id);
+        if ($province) {
+            $province->update([
+                'name' => $request->name,
+            ]);
+            return response()->json([
+                "message" => "Mise à jour avec succès!",
+                "code" => 200,
+                "data" => province::all(),
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Province introuvable!",
+                "data" => null,
+                "code" => 404,
+            ], 404);
+        }
+    }
+    public function deleteProvince($id)
+    {
+        $province = province::find($id);
+        if ($province) {
+            $province->deleted = 1;
+            $province->save();
+            return response()->json([
+                "message" => "Province supprimée avec succès!",
+                "data" => province::all(),
+                "code" => 200,
+            ], 200);
+        }
+    }
+
     public function all_province_item()
     {
         return response()->json([
@@ -87,7 +124,7 @@ class Pyramide extends Controller
 
     public function listprovince()
     {
-        $allprovince = province::all();
+        $allprovince = province::where('status', 1)->where('deleted', 0)->get();
         return response()->json([
             "message" => "Liste des provinces!",
             "data" => $allprovince,
@@ -128,6 +165,46 @@ class Pyramide extends Controller
             ], 404);
         }
     }
+    public function updateTerritoir(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'provinceid' => 'required',
+        ]);
+        $territoir = territoir::find($id);
+        if ($territoir) {
+            $province = province::find($request->provinceid);
+            if ($province) {
+                $territoir->update([
+                    'name' => $request->name,
+                    'provinceid' => $request->provinceid
+                ]);
+                return response()->json([
+                    "message" => "Territoir mise à jour avec succès!",
+                    "code" => 200,
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Erreur!",
+                    "code" => 404,
+                    "data" => null,
+                ], 404);
+            }
+        }
+    }
+    public function deleteTerritoir($id)
+    {
+
+        $territoir = territoir::find($id);
+        if ($territoir) {
+            $territoir->deleted = 1;
+            $territoir->save();
+            return response()->json([
+                "message" => "Territoir supprimé avec succès!",
+                "code" => 200,
+            ], 200);
+        }
+    }
     public function listterritoir($idpro)
     {
         $oneprovince = province::where('id', $idpro)->first();
@@ -138,7 +215,8 @@ class Pyramide extends Controller
                 "code" => 422,
             ], 422);
         } else {
-            $allter = territoir::where('provinceid', $oneprovince->id)->get();
+            $allter = territoir::where('provinceid', $oneprovince->id)
+                ->where('status', 1)->where('deleted', 0)->get();
             return response()->json([
                 "message" => "Liste de territoirs!",
                 "data" => $allter,
@@ -170,6 +248,50 @@ class Pyramide extends Controller
             ], 422);
         }
     }
+    public function updateZone(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'territoirid' => 'required',
+        ]);
+        $zone = zonesante::find($id);
+        $territoir = territoir::find($request->territoirid);
+        if ($zone) {
+            if ($territoir) {
+                $zone->update([
+                    'name' => $request->name,
+                    'territoirid' => $request->territoirid,
+                ]);
+                return response()->json([
+                    "message" => "Mise à jour avec succès!",
+                    "code" => 200,
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Ce territoire n'existe pas",
+                    "code" => 404,
+                    "data" => null,
+                ], 404);
+            }
+        }
+    }
+    public function deleteZone($id)
+    {
+        $zone = zonesante::find($id);
+        if ($zone) {
+            $zone->deleted = 1;
+            $zone->save();
+            return response()->json([
+                "message" => "Zone supprimée avec succès!",
+                "code" => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Cette zone n'existe pas",
+                "code" => 404,
+            ], 404);
+        }
+    }
 
     public function listzone($id)
     {
@@ -195,7 +317,6 @@ class Pyramide extends Controller
         $request->validate([
             'name' => 'required',
             'zoneid' => 'required',
-
         ]);
         if (!airesante::where('name', $request->name)->exists()) {
             $zone = airesante::create([
@@ -214,6 +335,56 @@ class Pyramide extends Controller
                 "code" => 422,
                 "data" => null,
             ], 422);
+        }
+    }
+    public function updateAire(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'zoneid' => 'required',
+            'nbr_population' => 'required',
+        ]);
+        $aire = airesante::find($id);
+        $zone = zonesante::find($request->zoneid);
+        if ($aire) {
+            if ($zone) {
+                $aire->update([
+                    'name' => $request->name,
+                    'zoneid' => $request->zoneid,
+                    'nbr_population' => $request->nbr_population,
+                ]);
+                return response()->json([
+                    "message" => "Mise à jour avec succès!",
+                    "code" => 200,
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Cette zone de santé n'existe pas!",
+                    "code" => 404,
+                ], 40);
+            }
+        } else {
+            return response()->json([
+                "message" => "Cette aire de santé n'existe pas!",
+                "code" => 404,
+            ], 404);
+        }
+    }
+    public function deleteAire($id)
+    {
+        $aire = airesante::find($id);
+        if ($aire) {
+            $aire->deleted = 1;
+            $aire->save();
+            return response()->json([
+                "message" => "Aire de santé supprimée avec succès!",
+                "code" => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Cette aire de santé n'existe pas!",
+                "code" => 404,
+            ], 404);
         }
     }
     public function listaire($id)
@@ -252,15 +423,17 @@ class Pyramide extends Controller
                     "code" => 422
                 ], 422);
             } else {
-                structureSanteModel::create([
+                $structure = structureSanteModel::create([
                     'name' => $request->name,
                     'aireid' => $request->aireid,
                     'contact' => $request->contact,
+                    'type_id' => $request->type,
                 ]);
                 return response()->json([
                     "message" => "Enregistrement avec succès!",
                     "code" => 200,
-                    "data" => null,
+                    "data" => structureSanteModel::with('typestructure')
+                        ->where('id', $structure->id)->first(),
                 ], 200);
             }
         } else {
@@ -271,6 +444,65 @@ class Pyramide extends Controller
             ], 404);
         }
     }
+    public function updatestructure(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'aireid' => 'required',
+            'contact' => 'required',
+        ]);
+
+        $structure = structureSanteModel::where('id', $id)->first();
+        $airesante = airesante::find($request->aireid);
+        if ($airesante) {
+            if (!$structure) {
+                return response()->json([
+                    "message" => 'Cette structure existe déjà dans le système!',
+                    "data" => null,
+                    "code" => 422
+                ], 422);
+            } else {
+                $structure->name = $request->name;
+                $structure->aireid = $airesante->id;
+                $structure->contact = $request->contact;
+                $structure->type_id = $request->type;
+                $structure->update();
+                return response()->json([
+                    "message" => "Modification réussie avec succès!",
+                    "code" => 200,
+                    "data" => structureSanteModel::with('typestructure')
+                        ->where('id', $structure->id)->first(),
+                ], 200);
+            }
+        } else {
+            return response()->json([
+                "message" => "Aire de santé n'existe pas!",
+                "code" => 404,
+                "data" => null,
+            ], 404);
+        }
+    }
+
+    public function deleteStructure($id)
+    {
+        $structure = structureSanteModel::find($id);
+        if ($structure)
+        {
+            $structure->deleted = 1;
+            $structure->save();
+
+            return response()->json([
+                "message" => "Structure supprimée avec succès!",
+                "code" => 200,
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "Cette structure n'existe pas!",
+                "code" => 404,
+            ], 404);
+        }
+    }
+
     public function liststructure_par_aire($id)
     {
         $aire = airesante::where('id', $id)->first();
@@ -290,34 +522,36 @@ class Pyramide extends Controller
         }
     }
 
-    public function create_site_deplace(Request $request){
-           $request->validate([
-                 'name' =>'required',
-                 'aire_id' =>'required',
-           ]);
+    public function create_site_deplace(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'aire_id' => 'required',
+        ]);
 
-           if(!SiteDeplaceModel::where('name', $request->name)->exists()){
+        if (!SiteDeplaceModel::where('name', $request->name)->exists()) {
             SiteDeplaceModel::create([
-                'name' =>$request->name,
-                'aire_id' =>$request->aire_id,
+                'name' => $request->name,
+                'aire_id' => $request->aire_id,
             ]);
             return response()->json([
                 "message" => "success",
-                "data" =>  SiteDeplaceModel::orderBy('name','asc')->get(),
+                "data" =>  SiteDeplaceModel::orderBy('name', 'asc')->get(),
                 "code" => 200,
             ], 200);
-           }else{
+        } else {
             return response()->json([
                 "message" => "Ce site de place existe déjà dans le system!",
                 "code" => 422,
             ], 422);
-           }
+        }
     }
 
-    public function get_site_deplace() {
+    public function get_site_deplace()
+    {
         return response()->json([
             "message" => "success",
-            "data" =>  SiteDeplaceModel::orderBy('name','asc')->get(),
+            "data" =>  SiteDeplaceModel::orderBy('name', 'asc')->get(),
             "code" => 200,
         ], 200);
     }

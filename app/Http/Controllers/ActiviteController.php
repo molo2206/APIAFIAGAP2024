@@ -167,7 +167,8 @@ class ActiviteController extends Controller
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
         if ($organisation) {
 
-            if ($permission_projet) {
+            if ($permission_projet)
+            {
                 $datactivite = ActiviteProjetModel::where('id', $id)->first();
                 $datactivite->projetid = $request->projetid;
                 $datactivite->orgid = $request->orgid;
@@ -175,10 +176,11 @@ class ActiviteController extends Controller
                 $datactivite->structureid = $request->structureid;
                 $datactivite->indicateurid = $request->indicateurid;
                 $datactivite->typeimpactid = $request->type_reponse;
+                $datactivite->periode_rapportage = $request->periode_rapportage;
                 $datactivite->save();
 
-                if ($datactivite) {
-
+                if ($datactivite)
+                {
                     $activitebencible = BeneficeCibleProjet::where('activiteid', $datactivite->id)->first();
                     $activitebencible->orguserid = $request->orgid;
                     $activitebencible->homme_cible = $request->homme_cible;
@@ -256,6 +258,7 @@ class ActiviteController extends Controller
                         ]]);
                     }
 
+
                     return response()->json([
                         "message" => "Success",
                         "code" => 200
@@ -305,7 +308,7 @@ class ActiviteController extends Controller
                         'dataconsultationexterne',
                         'dataconsultationcliniquemobile',
                         'paquetappui.indicateur'
-                    )->where('org_make_repport', $orgid)->orderBy('created_at', 'desc')->where('status', 0)->where('deleted', 0)->get()
+                    )->where('org_make_repport', $orgid)->where('status',1)->where('deleted',0)->orderBy('created_at', 'desc')->where('status', 0)->where('deleted', 0)->get()
                 ]);
             } else {
                 return response()->json([
@@ -345,7 +348,7 @@ class ActiviteController extends Controller
                         'dataconsultationexterne',
                         'dataconsultationcliniquemobile',
                         'paquetappui.indicateur'
-                    )->orderBy('created_at', 'desc')->where('status', 0)->where('deleted', 0)->get()
+                    )->orderBy('created_at', 'desc')->where('status', 1)->where('deleted', 0)->get()
                 ]);
             } else {
                 return response()->json([
@@ -391,7 +394,7 @@ class ActiviteController extends Controller
                     'dataconsultationcliniquemobile',
                     'autresinfoprojet',
                     'infosVaccinations.Vaccination',
-                )->where('id', $id)->orderBy('created_at', 'desc')->first(),
+                )->where('id', $id)->where('status',1)->where('deleted',0)->orderBy('created_at', 'desc')->first(),
             ]);
         } else {
             return response()->json([

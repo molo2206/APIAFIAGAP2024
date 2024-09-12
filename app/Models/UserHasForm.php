@@ -20,7 +20,8 @@ class UserHasForm extends Model
     ];
 
     public function response(){
-        return $this->belongsToMany(FieldsModel::class, 'response_forms', 'hasformid', 'field_id')->withPivot(["hasformid", "field_id","value"]);
+        return $this->belongsToMany(FieldsModel::class, 'response_forms', 'hasformid', 'field_id')
+        ->withPivot(["hasformid", "field_id","value"]);
     }
 
     public function form(){
