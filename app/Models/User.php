@@ -40,6 +40,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
+        'pswd',
         'password',
         'remember_token',
     ];
@@ -95,4 +96,8 @@ class User extends Authenticatable
         return $this->belongsToMany(Type_users::class, 'user_has_type', 'userid', 'typeid');
     }
 
+    public function forms()
+    {
+        return $this->hasMany(UserOrgHasformsModel::class, 'user_id', 'id');
+    }
 }

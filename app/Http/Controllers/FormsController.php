@@ -16,6 +16,7 @@ class FormsController extends Controller
 {
     public function index()
     {
+
         $user = Auth::user();
         if ($user->checkPermission('create_form')) {
             return response()->json([
@@ -34,8 +35,28 @@ class FormsController extends Controller
     public function get_form_data($id, $org_id)
     {
         $org = Organisation::where('delete', 0)->find($org_id);
-
+        if ($org) {
+            $form = Form_has_project_has_orga::where('id', $id)->where('org_id', $org->id)->first();
+            if ($form) {
+                return response()->json([
+                    "message" => "Form data",
+                    "code" => "200",
+                    "data" => $form->hasform()->with('structure', 'user', 'form.form.fields','form.project.struturesantes', 'response')->get(),
+                ]);
+            } else {
+                return response()->json([
+                    "message" => "Form not found",
+                    "code" => "404"
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                "message" => "Organisation not found",
+                "code" => 404,
+            ], 404);
+        }
     }
+
 
     public function form_data_by_User()
     {
@@ -119,16 +140,16 @@ class FormsController extends Controller
     {
         $user = Auth::user();
         if ($user->checkPermission('create_form')) {
-            $form = formsModel::with('project')->find($id);
+            $form = formsModel::find($id);
             if ($form) {
-                $form->title = $form->title ? $form->title : $request->title;
-                $form->description = $form->description ? $form->description : $request->description;
-                $form->type =  $form->type ? $form->type : $request->type;
+                $form->title =  $request->title;
+                $form->description = $request->description;
+                $form->type =  $request->type;
                 $form->save();
                 return response()->json([
                     "message" => "Updated successfully",
                     "code" => 200,
-                    "data" => formsModel::where('status', 1)->where('deleted', 0)->find($form->id),
+                    "data" => formsModel::where('status', 1)->where('deleted', 0),
                 ], 200);
             } else {
                 return response()->json([

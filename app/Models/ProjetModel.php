@@ -53,6 +53,7 @@ class ProjetModel extends Model
         "resultat_collectif",
         "axe_strategique",
         "projet_vise",
+        "montant_assiste"
     ];
 
     public function databeneficecible()

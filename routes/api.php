@@ -69,7 +69,7 @@ Route::get('/user/infouseraffectation/{id}', [UserController::class, 'InfosUserB
 Route::post('/to', [FireBasePushTest::class, 'push_to']);
 Route::post('/updatefinger', [UserController::class, 'addfingerprint']);
 Route::get('/users/listeUsers_desk', [UserController::class, 'getUsers']);
-
+Route::post('/search_users', [UserController::class, 'searchUser']);
 //Pyramide medical
 Route::get('/listprovince', [Pyramide::class, 'listprovince']);
 Route::get('/listprovince_item', [Pyramide::class, 'all_province_item']);
@@ -140,7 +140,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     //les routes maladie
-    Route::post('/maladie/addmaladie/{id}', [MaladieController::class, 'AddMaladie']);
+    Route::post('/maladie/addmaladie', [MaladieController::class, 'AddMaladie']);
     Route::post('/maladie/updatemaladie/{id}', [MaladieController::class, 'updateMaladie']);
     Route::get('/maladie/list', [MaladieController::class, 'listMaladie']);
 
@@ -305,8 +305,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/form/show/{id}', [FormsController::class, 'show']);
     Route::post('/form/deployed/{id}', [FormsController::class, 'deployed']);
     Route::post('/form_has_project/create', [FormHasProjectHasOrganisation::class, 'create']);
+    Route::post('/form_has_project/update/{id}', [FormHasProjectHasOrganisation::class, 'update']);
     Route::get('/form_has_project/list/{id}', [FormHasProjectHasOrganisation::class, 'get_has_form']);
     Route::get('/form_has_project/list_otp/{otp}', [FormHasProjectHasOrganisation::class, 'getby_otp']);
+    Route::post('/form/user/affecter', [UserController::class, 'UserOrgHasforms']);
+    Route::post('/form/user/desaffecter/{id}', [UserController::class, 'CancelForm']);
+    Route::get('form/user/list/{id}',[UserController::class, 'List_User_Form']);
 
 
 
@@ -321,9 +325,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/field/create', [FieldController::class, 'store']);
     Route::get('/field/list', [FieldController::class, 'index']);
     Route::post('/field/status/{id}', [FieldController::class, 'status']);
-    Route::delete('/field/delete/{id}', [FieldController::class, 'destroy']);
+    Route::delete('/field/delete/{id}/{field}', [FieldController::class, 'destroy']);
     Route::get('/field/show/{otp}', [FieldController::class, 'show']);
     Route::get('/field/show_form/{id}', [FieldController::class, 'show_by_id']);
+    Route::post('/field/addfield', [FieldController::class, 'addfield']);
 
     //SendFormulaire
     Route::post('/form_data/create', [UserHasFormController::class, 'store']);
@@ -331,6 +336,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/data_form/show/{id}', [UserHasFormController::class, 'get_by_stucture']);
     Route::get('/data_by_form/show/{id}/{org_id}', [FormsController::class, 'get_form_data']);
     Route::get('/data_form_by_user', [FormsController::class, 'form_data_by_User']);
+    Route::get('/data/userforms', [FormHasProjectHasOrganisation::class, 'userforms']);
 
     //Type User
     Route::post('/typeuser/create', [UserController::class, 'add_type_user']);

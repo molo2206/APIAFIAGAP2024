@@ -8,14 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class FieldsModel extends Model
 {
-    use HasFactory,HasUuids;
+    use HasFactory;
     protected $table = 'fields';
     protected $fillable = [
         'name',
         'label',
         'form_id',
         'fieldtype_id',
-        'isOptional'
+        'isOptional',
+        'number'
     ];
 
     public function typefield(){

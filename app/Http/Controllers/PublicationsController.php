@@ -220,6 +220,7 @@ class PublicationsController extends Controller
                 'name' => $request->keyword,
             ]);
         }
+
         return response([
             "message" => "Success",
             "code" => 200,

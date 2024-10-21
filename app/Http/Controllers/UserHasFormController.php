@@ -12,13 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class UserHasFormController extends Controller
 {
-    public function index()
-    {
-    }
+    public function index() {}
 
-    public function get_by_id($id)
-    {
-    }
+    public function get_by_id($id) {}
 
     public function get_by_stucture(Request $request, $id)
     {
@@ -63,7 +59,16 @@ class UserHasFormController extends Controller
         // Store the data in the database
         $user = Auth::user();
         $form = Form_has_project_has_orga::find($request->formid);
+
         if ($form) {
+
+            if (!$user->forms()->where('form_id', $form->id)->where('status', 1)->exists()) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => 'Vous n\'avez pas accès à ce formulaire!'
+                ], 422);
+            }
+
             $hasuser = [
                 'userid' => $user->id,
                 'formid' => $request->formid,
@@ -94,10 +99,46 @@ class UserHasFormController extends Controller
         }
     }
 
-    public function destroy(Request $request)
+    public function addfield(Request $request)
     {
+        $request->validate([
+            'formid' => 'required',
+            'field_id' => 'required',
+            'value' => 'required',
+            'number' => 'required',
+        ]);
+
+        // Store the data in the database
+        $user = Auth::user();
+        $form = Form_has_project_has_orga::find($request->formid);
+        if ($form) {
+            $hasuser = [
+                'formid' => $request->formid,
+                'field_id' => $request->field_id,
+                'value' => $request->sem_debut,
+                'number' => $request->number
+            ];
+
+            $hasform = UserHasForm::create($hasuser);
+            $hasform->response()->detach();
+            foreach ($request->response as $item) {
+                $hasform->response()->attach([$hasform->id => [
+                    'field_id' => $item['field_id'],
+                    'value' => $item['value'],
+                ]]);
+            }
+
+            return response()->json([
+                'code' => 200,
+                'message' => 'Saved successfully'
+            ], 200);
+        } else {
+            return response()->json([
+                'code' => 404,
+                'message' => 'Form not found'
+            ], 404);
+        }
     }
-    public function update()
-    {
-    }
+    public function destroy(Request $request) {}
+    public function update() {}
 }

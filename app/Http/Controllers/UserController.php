@@ -9,6 +9,7 @@ use App\Mail\Verificationmail;
 use App\Models\AffectationModel;
 use App\Models\AffectationPermission;
 use App\Models\codeValidation;
+use App\Models\Form_has_project_has_orga;
 use App\Models\Organisation;
 use App\Models\Permission;
 use App\Models\RoleModel;
@@ -16,6 +17,7 @@ use App\Models\TokenUsers;
 use App\Models\Type_users;
 use App\Models\User;
 use App\Models\User_has_Type;
+use App\Models\UserOrgHasformsModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +35,7 @@ class UserController extends Controller
             ]);
 
             if (User::where('email', $request->email)->exists()) {
-                $user = User::where('email', $request->email)->first();
+                $user = User::where('email', $request->email)->where('deleted', 0)->first();
                 if ($user->status == 1) {
                     if (Hash::check($request->pswd, $user->pswd)) {
                         $token = $user->createToken("accessToken")->plainTextToken;
@@ -494,7 +496,7 @@ class UserController extends Controller
                                 }
                                 return response()->json([
                                     "message" => 'success',
-                                    "data" => $user::with('affectation.role', 'typeUser','affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
                                         ->where('id', $user->id)->first(),
                                     "status" => 1,
                                     "token" => $token
@@ -610,52 +612,44 @@ class UserController extends Controller
         $request->validate([
             "email" => "required|email",
         ]);
-        $user = User::where('email', $request->email)->first();
-        if ($user) {
-            $user->update([
-                "full_name" => $request->fullname,
-                "email" => $request->email,
-                "provider" => 1,
-                "profil" => $request->image
-            ]);
-            $type =  Type_users::where('name', 'user')->first();
-            if ($user) {
-                User_has_Type::create([
-                    'userid' => $user->id,
-                    'typeid' => $type->id,
-                ]);
+        if (User::where('email', $request->email)->exists()) {
+            $user = User::where('email', $request->email)->first();
+            if ($user->status == 1) {
+                $token = $user->createToken("accessToken")->plainTextToken;
+                Log::channel(channel: 'slack')->critical(message: $user);
+                if ($request->token) {
+                    $token_data = TokenUsers::where('token', $request->token)->first();
+                    if ($token_data != null) {
+                        $token_data->userid = $user->id;
+                        $token_data->save();
+                    } else {
+                        if ($token_data != null && $token_data->userid == $user->id) {
+                            $token_data->userid = $user->id;
+                            $token_data->save();
+                        } else {
+                            TokenUsers::create([
+                                'token' => $request->token,
+                                'userid' => $user->id
+                            ]);
+                        }
+                    }
+                }
+                return response()->json([
+                    "message" => 'success',
+                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                        ->where('id', $user->id)->first(),
+                    "status" => 1,
+                    "token" => $token
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => 'Votre compte n\'est pas activé'
+                ], 422);
             }
-            $token = $user->createToken("accessToken")->plainTextToken;
-            Log::channel(channel: 'slack')->critical(message: $user);
-            return response()->json([
-                "message" => 'success',
-                "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')
-                    ->where('id', $user->id)->where('deleted', 0)->first(),
-                "status" => 1,
-                "token" => $token
-            ], 200);
         } else {
-            $user = User::create([
-                "full_name" => $request->fullname,
-                "email" => $request->email,
-                "provider" => 1,
-                "profil" => $request->image
-            ]);
-            $type =  Type_users::where('name', 'user')->first();
-            if ($user) {
-                User_has_Type::create([
-                    'userid' => $user->id,
-                    'typeid' => $type->id,
-                ]);
-            }
-            $token = $user->createToken("accessToken")->plainTextToken;
-            Log::channel(channel: 'slack')->critical(message: $user);
             return response()->json([
-                "message" => 'success',
-                "data" => $user,
-                "status" => 1,
-                "token" => $token
-            ], 200);
+                "message" => "Cette adresse email n'existe pas"
+            ], 404);
         }
     }
     public function changePswdProfil(Request $request)
@@ -941,5 +935,119 @@ class UserController extends Controller
             "code" => 200,
             "data" => Type_users::where('status', 1)->where('deleted', 0)->get()
         ], 200);
+    }
+
+    public function searchUser(Request $request)
+    {
+        $request->validate([
+            "keyword" => "required"
+        ]);
+
+        $users = User::where('deleted', 0)
+            ->where('full_name', 'like', '%' . $request->keyword . '%')
+            ->orwhere('email', 'like', '%' . $request->keyword . '%')
+            ->where('status', 1)
+            ->select(
+                't_users.id',
+                't_users.full_name',
+                't_users.email',
+                't_users.phone',
+                't_users.profil',
+            );
+        $allusers = $users->get();
+        return response([
+            "message" => "Success",
+            "code" => 200,
+            "data" => $allusers,
+        ],  200);
+    }
+
+    public function UserOrgHasforms(Request $request)
+    {
+        $request->validate([
+            'form_id' => 'required',
+            'user_id' => 'required',
+        ]);
+        $form = Form_has_project_has_orga::find($request->form_id);
+        $user = User::find($request->user_id);
+        if ($user) {
+            if ($form) {
+                if (UserOrgHasformsModel::where('user_id', $request->user_id)
+                    ->where('form_id', $request->form_id)->where('status',1)->first()
+                ) {
+                    return response()->json([
+                        "message" => 'Cet utilisateur est déjà affecté sur ce formulaire!',
+                        "code" => 404
+                    ], 404);
+                } else {
+                    $data = [
+                        'form_id' => $request->form_id,
+                        'user_id' => $request->user_id,
+                    ];
+                    UserOrgHasformsModel::create($data);
+                    return response()->json([
+                        "message" => 'succes',
+                        "code" => 200
+                    ], 200);
+                }
+            } else {
+                return response()->json([
+                    "message" => 'Le formulaire n\'existe pas',
+                    "code" => 404
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                "message" => 'Utilisateur non trouvé!',
+                "code" => 404
+            ], 404);
+        }
+    }
+    public function CancelForm(Request $request, $id)
+    {
+        $request->validate([
+            'user_id' => 'required'
+        ]);
+        $form = Form_has_project_has_orga::with('form', 'users')->find($id);
+        if ($form) {
+            $user = $form->forms()->where('user_id', $request->user_id)->first();
+            if ($user) {
+                $form->forms()->where('user_id', $request->user_id)->update([
+                    'status' => 0,
+                ]);
+                return response()->json([
+                    "message" => 'Avec succès, cet utilisateur a été retiré de ce formulaire!',
+                    "code" => 200,
+                    "data" => $user
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => 'Cet utilisateur ne fait pas partie de ce formulaire!',
+                    "code" => 404
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                "message" => 'Id not found!',
+                "code" => 404
+            ], 404);
+        }
+    }
+
+    public function List_User_Form($id)
+    {
+        $form = Form_has_project_has_orga::with('form', 'users')->find($id);
+        if ($form) {
+            return response()->json([
+                "message" => 'Liste des utilisateurs avec des formulaires',
+                "code" => 200,
+                "data" => $form->forms()->with('user')->where('status', 1)->get()
+            ]);
+        } else {
+            return response()->json([
+                "message" => 'Id not found!',
+                "code" => 404
+            ], 404);
+        }
     }
 }

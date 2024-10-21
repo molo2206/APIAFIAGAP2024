@@ -24,6 +24,14 @@ class Form_has_project_has_orga extends Model
     }
 
     public function hasform(){
-        return $this->hasMany(UserHasForm::class, 'formid', 'id');
+        return $this->hasMany(UserHasForm::class, 'formid', 'id')->orderBy('sem_epid','DESC');
+    }
+
+    public function users(){
+        return $this->belongsToMany(User::class,'user_org_hasforms', 'form_id','user_id');
+    }
+
+    public function forms(){
+        return $this->hasMany(UserOrgHasformsModel::class,'form_id','id');
     }
 }

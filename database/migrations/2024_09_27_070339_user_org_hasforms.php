@@ -6,20 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
     public function up()
     {
-        Schema::create('fieldtypes', function (Blueprint $table){
+        Schema::create('user_org_hasforms',function(Blueprint $table){
             $table->uuid('id')->primary();
-            $table->string('name')->nullable();
-            $table->string('icon')->nullable();
+            $table->foreignUuid('form_id')->constrained('form_has_project_has_org')->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained('t_users')->onDelete('cascade');
             $table->boolean('status')->default(false);
-            $table->boolean('deleted')->default(false);
             $table->timestamps();
-        });
+           });
     }
 
     public function down()
     {
-        Schema::dropIfExists('fieldtypes');
+        Schema::dropIfExists('user_org_hasforms');
     }
 };

@@ -72,7 +72,8 @@ class ProjetController extends Controller
                     'cohp_relais' => $request->cohp_relais,
                     'odd' => $request->odd,
                     'userid' => $user->id,
-                    'orguserid' => $request->orgid
+                    'orguserid' => $request->orgid,
+                    'montant_assiste' => $request->montant_assiste,
                 ]);
 
                 $projet->struturesantes()->detach();
@@ -122,7 +123,6 @@ class ProjetController extends Controller
     {
         $request->validate([
             "title_projet" => 'required',
-
             "orgid" => 'required'
         ]);
 
@@ -155,6 +155,7 @@ class ProjetController extends Controller
                     $projet->resultat_collectif = $request->resultat_collectif;
                     $projet->axe_strategique = $request->axe_strategique;
                     $projet->projet_vise = $request->projet_vise;
+                    $projet->montant_assiste = $request->montant_assiste;
                     $projet->odd = $request->odd;
                     $projet->date_debut_projet = $request->date_debut_projet;
                     $projet->date_fin_projet = $request->date_fin_projet;
@@ -242,6 +243,45 @@ class ProjetController extends Controller
             "code" => 200,
             "data" => indicateur::where('type_reponseid', $id)->get(),
         ], 200);
+    }
+
+    public function getAll_activites()
+    {
+        $user = Auth::user();
+        if ($user->checkPermission('create_activite')) {
+            return response()->json([
+                "message" => "Success",
+                "code" => 200,
+                "data" => ActiviteProjetModel::with(
+                    "projet.cohp_relais",
+                    "projet.typeprojet",
+                    "projet.datatypeimpact.typeimpact",
+                    "projet.datatypeimpact.indicateur.indicateur",
+                    "indicateur",
+                    'struture.airesante.zonesante.territoir.province',
+                    'struture.typestructure',
+                    'projet.data_organisation_make_rapport.type_org',
+                    'projet.data_organisation_mise_en_oeuvre.type_org',
+                    "typeimpacts",
+                    'databeneficecible',
+                    'databeneficecible',
+                    'databeneficecible',
+                    'databeneficeatteint',
+                    'databeneficeatteint',
+                    'dataconsultationexterne',
+                    'dataconsultationexterne',
+                    'dataconsultationcliniquemobile',
+                    'dataconsultationcliniquemobile',
+                    'autresinfoprojet',
+                    'infosVaccinations.Vaccination',
+                )->where('deleted', 0)->orderBy('created_at', 'desc')->get(),
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
+        }
     }
 
     public function getactivites($orgid)

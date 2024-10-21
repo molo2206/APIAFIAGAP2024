@@ -1722,15 +1722,6 @@ class GapsController extends Controller
             'maladie',
             'images'
         )->where('name_point_focal', 'like', '%' . $request->keyword . '%');
-        // $data_pub = PublicationsModel::with('category')->where('deleted', 0)->orderby('date_post', 'desc');
-        // $data_pub->where('title', 'like', '%' . $request->keyword . '%')
-        //     ->orwhere('content', 'like', '%' . $request->keyword)
-        //     ->orwhere('auteur', 'like', '%' . $request->keyword)
-        //     ->select(
-        //         't_publications.title',
-        //         't_publications.content',
-        //         't_publications.auteur',
-        //     );
 
         $alldatagap = $data_gap->whereNotNull('t_gaps_bloc1.children')->get()->toArray();
         $alldataalert = $data_alert->whereNotNull('children')->get()->toArray();
@@ -1834,6 +1825,19 @@ class GapsController extends Controller
 
         if ($type === "all") {
 
+            $weeks = [];
+            for ($i = 1; $i <= 52; $i++) {
+                array_push($weeks, [
+                    "week" => $i,
+                    "total" => [
+                        "population" => $allgap->get()->where('semaine_epid', $i)->sum("population"),
+                        "deplace" =>  $allgap->get()->where('semaine_epid', $i)->sum("pop_deplace"),
+                        "retourne" => $allgap->get()->where('semaine_epid', $i)->sum("pop_retourne"),
+                        "eloigne" =>  $gap->where('semaine_epid', $i),
+                    ]
+                ]);
+            }
+
             $data = [
                 "data" => [
                     "population" => $allgap->get()->sum("population"),
@@ -1841,7 +1845,8 @@ class GapsController extends Controller
                     "retourne" => $allgap->get()->sum("pop_retourne"),
                     "eloigne" =>  $gap,
                 ],
-                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get()
+                "total_by_month" => $allgap->orderBy('dateadd', 'asc')->whereYear('dateadd', date('Y'))->get(),
+                "weeks" => $weeks
             ];
         }
 
@@ -1850,7 +1855,9 @@ class GapsController extends Controller
             for ($i = 1; $i <= 52; $i++) {
                 array_push($weeks, [
                     "week" => $i,
-                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("population")
+                    "total" => [
+                        "population" => $allgap->get()->where('semaine_epid', $i)->sum("population")
+                    ]
                 ]);
             }
             $data = [
@@ -1867,7 +1874,9 @@ class GapsController extends Controller
             for ($i = 1; $i <= 52; $i++) {
                 array_push($weeks, [
                     "week" => $i,
-                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("pop_deplace")
+                    "total" => [
+                        "deplace" => $allgap->get()->where('semaine_epid', $i)->sum("pop_deplace")
+                    ]
                 ]);
             }
             $data = [
@@ -1879,13 +1888,14 @@ class GapsController extends Controller
             ];
         }
 
-        if ($type === "retourne")
-        {
+        if ($type === "retourne") {
             $weeks = [];
             for ($i = 1; $i <= 52; $i++) {
                 array_push($weeks, [
                     "week" => $i,
-                    "total" => $allgap->get()->where('semaine_epid',$i)->sum("pop_retourne")
+                    "total" => [
+                        "retourne" => $allgap->get()->where('semaine_epid', $i)->sum("pop_retourne")
+                    ]
                 ]);
             }
             $data = [
@@ -1903,6 +1913,7 @@ class GapsController extends Controller
                     "eloigne" =>  $gap,
                 ],
                 "total_by_month" => [],
+
             ];
         }
 
