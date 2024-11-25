@@ -10,6 +10,7 @@ use App\Models\Organisation;
 use App\Models\typeorg;
 use App\Models\zonesante;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 class OrganisationController extends Controller
@@ -25,60 +26,68 @@ class OrganisationController extends Controller
             "sigle" => "required|string",
             "typeorgid" => "required|string",
         ]);
-        if (typeorg::find($request->typeorgid)) {
-            if (!Organisation::where('email', $request->email)->exists()) {
-                if (!Organisation::where('phone', $request->phone)->exists()) {
-                    if (!Organisation::where('name', $request->name)->exists()) {
-                        $logo = UtilController::uploadImageUrl($request->logo, '/uploads/user/');
+        $user = Auth::user();
+        if ($user->checkPermissions('Organisation', 'create')) {
+            if (typeorg::find($request->typeorgid)) {
+                if (!Organisation::where('email', $request->email)->exists()) {
+                    if (!Organisation::where('phone', $request->phone)->exists()) {
+                        if (!Organisation::where('name', $request->name)->exists()) {
+                            $logo = UtilController::uploadImageUrl($request->logo, '/uploads/user/');
 
-                        Organisation::create([
-                            "name"  => $request->name,
-                            "email"  => $request->email,
-                            "phone" => $request->phone,
-                            "description"  => $request->description,
-                            "logo"  => $logo,
-                            "adresse"  => $request->adresse,
-                            "sigle" => $request->sigle,
-                            "activite"  => null,
-                            "pointfocal"  => $request->pointfocal,
-                            "typeorgid"  => $request->typeorgid,
-                            "status" => 0,
-                            "delete" => 0,
-                        ]);
-                        Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
-                        return response()->json([
-                            "message" => "Cette organisation à été créée avec succès.",
-                            "code" => 200,
-                            "code" => 200,
-                            "data" => Organisation::with('type_org')->orderBy('name', 'asc')->get(),
-                        ], 200);
+                            Organisation::create([
+                                "name"  => $request->name,
+                                "email"  => $request->email,
+                                "phone" => $request->phone,
+                                "description"  => $request->description,
+                                "logo"  => $logo,
+                                "adresse"  => $request->adresse,
+                                "sigle" => $request->sigle,
+                                "activite"  => null,
+                                "pointfocal"  => $request->pointfocal,
+                                "typeorgid"  => $request->typeorgid,
+                                "status" => 0,
+                                "delete" => 0,
+                            ]);
+                            Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
+                            return response()->json([
+                                "message" => "Cette organisation à été créée avec succès.",
+                                "code" => 200,
+                                "code" => 200,
+                                "data" => Organisation::with('type_org')->orderBy('name', 'asc')->get(),
+                            ], 200);
+                        } else {
+                            return response([
+                                "message" => "Le nom de cette organisation existe dans le système!",
+                                "code" => 422,
+                                "data" => null,
+                            ], 422);
+                        }
                     } else {
                         return response([
-                            "message" => "Le nom de cette organisation existe dans le système!",
+                            "message" => "Ce numèro phone existe dans le système!",
                             "code" => 422,
                             "data" => null,
                         ], 422);
                     }
                 } else {
                     return response([
-                        "message" => "Ce numèro phone existe dans le système!",
+                        "message" => "Cette adresse email existe dans le système!",
                         "code" => 422,
                         "data" => null,
                     ], 422);
                 }
             } else {
                 return response([
-                    "message" => "Cette adresse email existe dans le système!",
+                    "message" => "Ce type d'organisation n'existe pas dans le système!",
                     "code" => 422,
                     "data" => null,
                 ], 422);
             }
         } else {
-            return response([
-                "message" => "Ce type d'organisation n'existe pas dans le système!",
-                "code" => 422,
-                "data" => null,
-            ], 422);
+            return response()->json([
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function updateorganisation(Request $request, $id)
@@ -92,35 +101,44 @@ class OrganisationController extends Controller
             "sigle" => "required|string",
             "typeorgid" => "required|string",
         ]);
-        $org = Organisation::where('id', $id)->first();
-        if (!$org) {
-            return response()->json([
-                "message" => "Cette organisation n'existe pas!",
-                "code" => 402,
-            ], 402);
-        } else {
-            if ($request->logo) {
-                UtilController::removeImageUrl($org->logo);
-                $logo = UtilController::uploadImageUrl($request->image, "/uploads/organ/");
+        $user = Auth::user();
+        if ($user->checkPermissions('Menage', 'update'))
+        {
+            $org = Organisation::where('id', $id)->first();
+            if (!$org) {
+                return response()->json([
+                    "message" => "Cette organisation n'existe pas!",
+                    "code" => 402,
+                ], 402);
             } else {
-                $logo = $org->logo;
+                if ($request->logo) {
+                    UtilController::removeImageUrl($org->logo);
+                    $logo = UtilController::uploadImageUrl($request->image, "/uploads/organ/");
+                } else {
+                    $logo = $org->logo;
+                }
+                $org->name  =  $request->name;
+                $org->email = $request->email;
+                $org->phone = $request->phone;
+                $org->description = $request->description;
+                $org->logo  = $logo ? $logo : $org->logo;;
+                $org->adresse = $request->adresse;
+                $org->sigle = $request->sigle;
+                $org->typeorgid  = $request->typeorgid;
+                $org->pointfocal  = $request->pointfocal;
+                $org->update();
+                Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
+                return response()->json([
+                    "message" => "Cette organisation à été modifier avec succès.",
+                    "code" => 200,
+                    "data" => $org::with('type_org')->orderBy('name', 'asc')->get(),
+                ], 200);
             }
-            $org->name  =  $request->name;
-            $org->email = $request->email;
-            $org->phone = $request->phone;
-            $org->description = $request->description;
-            $org->logo  = $logo ? $logo : $org->logo;;
-            $org->adresse = $request->adresse;
-            $org->sigle = $request->sigle;
-            $org->typeorgid  = $request->typeorgid;
-            $org->pointfocal  = $request->pointfocal;
-            $org->update();
-            Mail::to($request->email)->send(new Creationorg($request->email, $request->name));
+        } else {
             return response()->json([
-                "message" => "Cette organisation à été modifier avec succès.",
-                "code" => 200,
-                "data" => $org::with('type_org')->orderBy('name', 'asc')->get(),
-            ], 200);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function list_organisation()

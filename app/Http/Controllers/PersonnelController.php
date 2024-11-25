@@ -32,11 +32,18 @@ class PersonnelController extends Controller
 
     $perso=PersonnelModel::find($id);
     if($perso){
-        $perso->name=$request->name;
-        $perso->save();
-        return response()->json([
-            "message" => "La modification réussie"
-        ], 200);
+        if(!PersonnelModel::where('name',$request->name)->exists()){
+            $perso->name=$request->name;
+            $perso->save();
+            return response()->json([
+                "message" => "La modification réussie"
+            ], 200);
+        }else{
+            return response()->json([
+                "message" => "Type personnel existe déjà!",
+            ], 422);
+        }
+
     }else{
         return response()->json([
             "message" => "Erreur de la modification",

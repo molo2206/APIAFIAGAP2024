@@ -12,7 +12,6 @@ use App\Models\codeValidation;
 use App\Models\Form_has_project_has_orga;
 use App\Models\Organisation;
 use App\Models\Permission;
-use App\Models\RoleModel;
 use App\Models\TokenUsers;
 use App\Models\Type_users;
 use App\Models\User;
@@ -59,7 +58,7 @@ class UserController extends Controller
                         }
                         return response()->json([
                             "message" => 'success',
-                            "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                            "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                                 ->where('id', $user->id)->first(),
                             "status" => 1,
                             "token" => $token
@@ -87,7 +86,7 @@ class UserController extends Controller
     {
         return response()->json([
             "message" => "Liste des utilisateurs",
-            "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+            "data" => User::with('affectation', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                 ->get(),
         ]);
     }
@@ -97,7 +96,7 @@ class UserController extends Controller
         $user = Auth::user();
         return response()->json([
             "message" => 'success',
-            "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+            "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                 ->where('id', $user->id)->first(),
         ], 200);
     }
@@ -111,7 +110,7 @@ class UserController extends Controller
             $token = $user->createToken("accessToken")->plainTextToken;
             return response()->json([
                 "message" => 'success',
-                "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                     ->where('id', $user->id)->first(),
                 "status" => 1,
                 "token" => $token
@@ -150,21 +149,46 @@ class UserController extends Controller
             ], 422);
         }
     }
-    public function listeUsersAffecter(Request $request)
+    public function listeUsersAffecter()
     {
         return response()->json([
             "message" => 'Liste des utilisateurs',
-            "data" => User::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
+            "data" => AffectationModel::with('user', 'organisation', 'permission')->where('deleted', 0)->paginate(10),
             "status" => 200,
         ], 200);
     }
+
+    public function OneUserAffect($id)
+    {
+        if (AffectationModel::find($id)) {
+            return response()->json([
+                "message" => 'Affection et Permissions',
+                "data" => AffectationModel::with('user', 'organisation', 'permission')->where('id',$id)->where('deleted', 0)->first(),
+                "status" => 200,
+            ], 200);
+        }else{
+            return response()->json([
+                "message" => 'Not found',
+                "status" => 422,
+            ], 422);
+        }
+    }
+    public function AllUsers()
+    {
+        return response()->json([
+            "message" => 'Liste des utilisateurs',
+            "data" => User::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
+            "status" => 200,
+        ], 200);
+    }
+
     public function listeUsersParOrganisation($idorg)
     {
         $org = Organisation::find($idorg);
         if ($org) {
             return response()->json([
                 "message" => 'Liste des utilisateurs',
-                "data" => User::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->paginate(),
+                "data" => User::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)->paginate(),
                 "status" => 200,
             ], 200);
         } else {
@@ -182,7 +206,7 @@ class UserController extends Controller
         if ($affectation) {
             return response()->json([
                 "message" => 'Liste des utilisateurs',
-                "data" => $affectation::with('role', 'organisation', 'affectation.allpermission.permission')
+                "data" => $affectation::with('organisation', 'affectation.permission')
                     ->where('deleted', 0)->first(),
                 "status" => 200,
             ], 200);
@@ -205,13 +229,9 @@ class UserController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_user')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_user = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_user) {
+        if ($user->checkPermissions('User', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 if (User::where('email', $request->email)->exists()) {
                     return response()->json([
                         "message" => 'Cette adresse est déjà utilisée!'
@@ -278,15 +298,15 @@ class UserController extends Controller
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function Register(Request $request)
@@ -394,7 +414,7 @@ class UserController extends Controller
                                 }
                                 return response()->json([
                                     "message" => 'success',
-                                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                    "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                                         ->where('id', $user->id)->first(),
                                     "status" => 1,
                                     "token" => $token
@@ -496,7 +516,7 @@ class UserController extends Controller
                                 }
                                 return response()->json([
                                     "message" => 'success',
-                                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                                    "data" => $user::with('typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                                         ->where('id', $user->id)->first(),
                                     "status" => 1,
                                     "token" => $token
@@ -530,7 +550,7 @@ class UserController extends Controller
             $user->save();
             return response()->json([
                 "message" => "Fingerprint modifier avec succès",
-                "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                "data" => $user::with('affectation.organisation', 'affectation.permission')->where('deleted', 0)
                     ->where('id', $user->id)->first(),
             ], 200);
         } else {
@@ -636,7 +656,7 @@ class UserController extends Controller
                 }
                 return response()->json([
                     "message" => 'success',
-                    "data" => $user::with('affectation.role', 'typeUser', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                    "data" => $user::with('typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                         ->where('id', $user->id)->first(),
                     "status" => 1,
                     "token" => $token
@@ -723,7 +743,7 @@ class UserController extends Controller
                 $user->save();
                 return response()->json([
                     "message" => "Profile modifier avec succès",
-                    "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+                    "data" => $user::with('affectation.organisation', 'typeUser', 'affectation.permission')->where('deleted', 0)
                         ->where('id', $user->id)->first(),
                 ], 200);
             } else {
@@ -774,7 +794,7 @@ class UserController extends Controller
                 $user->save();
                 return response()->json([
                     "message" => "Profile modifier avec succès",
-                    "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('updated_at', 'desc')->get(),
+                    "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)->orderBy('updated_at', 'desc')->get(),
                 ], 200);
             } else {
                 return response()->json([
@@ -786,13 +806,9 @@ class UserController extends Controller
     public function SupprimerUser(Request $request, $userid, $orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'delete_user')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('User', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+            if ($organisation) {
                 $users = User::where('id', $userid)->first();
                 if ($users) {
                     if ($users->deleted == 0) {
@@ -800,7 +816,7 @@ class UserController extends Controller
                         $users->save();
                         return response()->json([
                             "message" => "Utilisateur est supprimé avec succès",
-                            "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
+                            "data" => User::with('affectation.organisation', 'typeUser', 'affectation.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
 
                         ], 200);
                     } else {
@@ -808,7 +824,7 @@ class UserController extends Controller
                         $users->save();
                         return response()->json([
                             "message" => "Vous venez de restorer cet utilisateur!",
-                            "data" => User::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
+                            "data" => User::with('affectation.organisation', 'typeUser', 'affectation.permission')->where('deleted', 0)->orderBy('full_name', 'asc')->paginate(10),
                         ], 200);
                     }
                 } else {
@@ -826,9 +842,9 @@ class UserController extends Controller
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -846,7 +862,7 @@ class UserController extends Controller
         return response()->json([
             "message" => 'Photo de profile mise à jour',
             "status" => 1,
-            "data" => $user::with('affectation.role', 'affectation.organisation', 'affectation.allpermission.permission')->where('deleted', 0)
+            "data" => $user::with('affectation.organisation', 'typeUser', 'affectation.permission')->where('deleted', 0)
                 ->where('id', $user->id)->first(),
         ], 200);
     }
@@ -953,6 +969,8 @@ class UserController extends Controller
                 't_users.email',
                 't_users.phone',
                 't_users.profil',
+                't_users.gender',
+                't_users.dateBorn',
             );
         $allusers = $users->get();
         return response([
@@ -973,7 +991,7 @@ class UserController extends Controller
         if ($user) {
             if ($form) {
                 if (UserOrgHasformsModel::where('user_id', $request->user_id)
-                    ->where('form_id', $request->form_id)->where('status',1)->first()
+                    ->where('form_id', $request->form_id)->where('status', 1)->first()
                 ) {
                     return response()->json([
                         "message" => 'Cet utilisateur est déjà affecté sur ce formulaire!',
@@ -1003,11 +1021,14 @@ class UserController extends Controller
             ], 404);
         }
     }
+
     public function CancelForm(Request $request, $id)
     {
+
         $request->validate([
             'user_id' => 'required'
         ]);
+
         $form = Form_has_project_has_orga::with('form', 'users')->find($id);
         if ($form) {
             $user = $form->forms()->where('user_id', $request->user_id)->first();

@@ -11,7 +11,8 @@ class FieldTypeController extends Controller
     public function index()
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'delete'))
+        {
             return response()->json([
                 "message" => "TypeField list",
                 "code" => "200",
@@ -28,9 +29,7 @@ class FieldTypeController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap'))
-        {
-
+        if ($user->checkPermissions('Formulaire', 'create')) {
             $request->validate([
                 'name' => 'required',
                 'label' => 'required',
@@ -49,22 +48,19 @@ class FieldTypeController extends Controller
                 "message" => "Saved successfully",
                 "code" => 200,
             ], 200);
-
         } else {
 
             return response()->json([
                 "message" => "not authorized",
                 "code" => 404,
             ], 404);
-
         }
     }
 
     public function update(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap'))
-        {
+        if ($user->checkPermissions('Formulaire', 'update')) {
             $request->validate([
                 'name' => 'required',
                 'label' => 'required',
@@ -90,7 +86,6 @@ class FieldTypeController extends Controller
                     "code" => 200,
                     "data" => $typefield,
                 ], 200);
-
             } else {
 
                 return response()->json([
@@ -99,7 +94,6 @@ class FieldTypeController extends Controller
                 ], 404);
             }
         } else {
-
             return response()->json([
                 "message" => "not authorized",
                 "code" => 404,
@@ -111,7 +105,8 @@ class FieldTypeController extends Controller
     public function status(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'status'))
+        {
             $form = FieldsTypeModel::find($id);
             if ($form) {
                 $form->status = $request->status;
@@ -138,7 +133,8 @@ class FieldTypeController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'delete'))
+        {
             $form = FieldsTypeModel::find($id);
             if ($form) {
 
@@ -150,14 +146,12 @@ class FieldTypeController extends Controller
                     "code" => 200,
                     "data" => FieldsTypeModel::where('deleted', 0)->where('status', 1)->get()
                 ], 200);
-
             } else {
 
                 return response()->json([
                     "message" => "Id not found",
                     "code" => 404,
                 ], 404);
-
             }
         } else {
 
@@ -165,7 +159,6 @@ class FieldTypeController extends Controller
                 "message" => "not authorized",
                 "code" => 404,
             ], 404);
-
         }
     }
 }

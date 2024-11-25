@@ -37,18 +37,6 @@ use Google\Service\AlertCenter\Notification;
 use App\Http\Controllers\UserHasFormController;
 use App\Http\Controllers\FormHasProjectHasOrganisation;
 
-/*
-
-
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -112,6 +100,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/site/create_site_deplace', [Pyramide::class, 'create_site_deplace']);
 
     Route::post('/affectation/addaffectation', [AffectationController::class, 'Affectation']);
+    Route::post('/affectation/permission', [AffectationController::class,'permission']);
+     Route::post('/affectation/update_permission/{id}', [AffectationController::class,'updatepermission']);
     Route::post('/permission/addpermission', [AffectationController::class, 'create_permission']);
     Route::post('/permission/updatepermission/{id}', [AffectationController::class, 'update_permission']);
     Route::delete('/permission/deletepermission/{id}', [AffectationController::class, 'delete_permission']);
@@ -121,6 +111,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/permission/retireracces', [AffectationController::class, 'RetirerAcces']);
     Route::put('/users/deleteuser/{userid}/{orgid}', [UserController::class, 'SupprimerUser']);
     Route::get('/users/listeUsers', [UserController::class, 'listeUsersAffecter']);
+    Route::get('/users/getaffectuser/{id}', [UserController::class, 'OneUserAffect']);
+    Route::get('/users/allusers', [UserController::class,'AllUsers']);
     Route::get('/users/User_organisation/{id}', [UserController::class, 'listeUsersParOrganisation']);
     Route::get('/users/getuserid/{id}', [UserController::class, 'getuserId']);
     Route::post('/users/updatepswd', [UserController::class, 'changePswdProfil']);
@@ -140,7 +132,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     //les routes maladie
-    Route::post('/maladie/addmaladie', [MaladieController::class, 'AddMaladie']);
+    Route::post('/maladie/addmaladie/{id}', [MaladieController::class, 'AddMaladie']);
     Route::post('/maladie/updatemaladie/{id}', [MaladieController::class, 'updateMaladie']);
     Route::get('/maladie/list', [MaladieController::class, 'listMaladie']);
 
@@ -273,12 +265,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //Projet
     Route::post('/projet/create_projet', [ProjetController::class, 'create_projet']);
     Route::put('/projet/update_projet/{id}', [ProjetController::class, 'update_projet']);
-    Route::get('/projet/getprojet/{id}', [ProjetController::class, 'getprojet']);
+    Route::get('/projet/getprojet/{orgid}', [ProjetController::class, 'getprojet']);
     Route::post('/projet/create_detail_projet/{id}', [ProjetController::class, 'create_detail_projet']);
     Route::post('/projet/create_pyramide_projet/{id}', [ProjetController::class, 'create_rayon_action_projet']);
     Route::get('/projet/getstructurebyprojet/{id}', [ProjetController::class, 'getStructureByProjet']);
     Route::get('/projet/gettypevaccin', [ProjetController::class, 'gettypevaccin']);
     Route::get('/projet/get_all_activites/{id}', [ProjetController::class, 'getactivites']);
+    Route::get('/activite/get_all_activite', [ProjetController::class, 'getAll_activites']);
 
     Route::get('/projet/gettype_projet', [ProjetController::class, 'gettype_projet']);
     Route::get('/projet/gettype_impact', [ProjetController::class, 'gettype_impact']);

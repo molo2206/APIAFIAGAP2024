@@ -19,7 +19,8 @@ class FormHasProjectHasOrganisation extends Controller
             'org_id' => 'required',
         ]);
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'create'))
+        {
             if (Form_has_project_has_orga::where('form_id', $request->form_id)
                 ->where('project_id', $request->project_id)->where('org_id', $request->org_id)->exists()
             ) {
@@ -59,7 +60,8 @@ class FormHasProjectHasOrganisation extends Controller
             'org_id' => 'required',
         ]);
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'update'))
+        {
             $formhas = Form_has_project_has_orga::find($id);
             if ($formhas) {
                 $formhas->form_id = $request->form_id;
@@ -90,7 +92,7 @@ class FormHasProjectHasOrganisation extends Controller
     {
         $user = Auth::user();
         if (Organisation::find($id)) {
-            if ($user->checkPermission('view_alert')) {
+            if ($user->checkPermissions('Formulaire', 'read')) {
                 return response()->json([
                     "message" => "Data created successfully",
                     "code" => 200,

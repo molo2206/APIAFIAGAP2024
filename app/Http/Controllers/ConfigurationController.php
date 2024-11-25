@@ -21,45 +21,51 @@ class ConfigurationController extends Controller
             'description' => 'required',
             'adresse' => '',
         ]);
-
-        $conf = ConfigurationModel::first();
-
-        if ($conf == null) {
-            ConfigurationModel::create([
-                'organisation_name' => $request->organisation_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'politique'  => $request->politique,
-                'condition' => $request->condition,
-                'apropos' => $request->apropos,
-                'version' => $request->version,
-                'app_store' => $request->app_store,
-                'google_play' => $request->google_play,
-                'description' => $request->description,
-                'adresse' => $request->description,
-            ]);
-            return response()->json([
-                "message" => "success",
-                "code" => 200,
-                "data" => ConfigurationModel::where('organisation_name', $request->organisation_name)->first(),
-            ], 200);
+        $user = $request->user();
+        if ($user->checkPermissions('Configuration', 'create')) {
+            $conf = ConfigurationModel::first();
+            if ($conf == null) {
+                ConfigurationModel::create([
+                    'organisation_name' => $request->organisation_name,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'politique'  => $request->politique,
+                    'condition' => $request->condition,
+                    'apropos' => $request->apropos,
+                    'version' => $request->version,
+                    'app_store' => $request->app_store,
+                    'google_play' => $request->google_play,
+                    'description' => $request->description,
+                    'adresse' => $request->description,
+                ]);
+                return response()->json([
+                    "message" => "success",
+                    "code" => 200,
+                    "data" => ConfigurationModel::where('organisation_name', $request->organisation_name)->first(),
+                ], 200);
+            } else {
+                $conf->organisation_name = $request->organisation_name;
+                $conf->email = $request->email;
+                $conf->phone = $request->phone;
+                $conf->politique  = $request->politique;
+                $conf->condition = $request->condition;
+                $conf->apropos = $request->apropos;
+                $conf->version = $request->version;
+                $conf->app_store = $request->app_store;
+                $conf->google_play = $request->google_play;
+                $conf->description = $request->description;
+                $conf->update();
+                return response()->json([
+                    "message" => "success",
+                    "code" => 200,
+                    "data" => ConfigurationModel::where('id', $conf->id)->first(),
+                ], 200);
+            }
         } else {
-            $conf->organisation_name = $request->organisation_name;
-            $conf->email = $request->email;
-            $conf->phone = $request->phone;
-            $conf->politique  = $request->politique;
-            $conf->condition = $request->condition;
-            $conf->apropos = $request->apropos;
-            $conf->version = $request->version;
-            $conf->app_store = $request->app_store;
-            $conf->google_play = $request->google_play;
-            $conf->description = $request->description;
-            $conf->update();
             return response()->json([
-                "message" => "success",
-                "code" => 200,
-                "data" => ConfigurationModel::where('id', $conf->id)->first(),
-            ], 200);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -90,12 +96,12 @@ class ConfigurationController extends Controller
             ], 200);
         } else {
             if ($logo == null) {
-                $conf ->logo = $conf->logo;
+                $conf->logo = $conf->logo;
             } else {
                 $conf->logo = $logo;
             }
             if ($fiveicone == null) {
-                $conf ->fiveicone = $conf->fiveicone;
+                $conf->fiveicone = $conf->fiveicone;
             } else {
                 $conf->fiveicone = $fiveicone;
             }
@@ -108,24 +114,11 @@ class ConfigurationController extends Controller
         }
     }
 
-    public function create_blog()
-    {
+    public function create_blog() {}
 
-    }
+    public function update_blog() {}
 
-    public function update_blog()
-    {
+    public function list_blog() {}
 
-    }
-
-    public function list_blog()
-    {
-
-    }
-
-    public function detail_blog()
-    {
-
-    }
-
+    public function detail_blog() {}
 }

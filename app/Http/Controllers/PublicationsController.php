@@ -19,7 +19,7 @@ class PublicationsController extends Controller
     public function addpublication(Request $request)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_publications')) {
+        if ($user->checkPermissions('Publication', 'create')) {
             $request->validate([
                 "image" => "required|image",
                 "title" => "required",
@@ -79,7 +79,8 @@ class PublicationsController extends Controller
             "legend" => "required",
         ]);
         $user = Auth::user();
-        if ($user->checkPermission('create_publications')) {
+        if ($user->checkPermissions('Publication', 'update'))
+        {
             $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
             $pub = PublicationsModel::find($id);
             $pub->image = $image ? $image : $pub->image;
@@ -119,8 +120,9 @@ class PublicationsController extends Controller
 
     public function destroy($id)
     {
-        $user=Auth::user();
-        if ($user->checkPermission('create_publications')) {
+        $user = Auth::user();
+        if ($user->checkPermissions('Publication', 'delete'))
+        {
             $pub = PublicationsModel::where('deleted', 0)->where('id', $id)->first();
             if ($pub) {
                 $pub->deleted = 1;

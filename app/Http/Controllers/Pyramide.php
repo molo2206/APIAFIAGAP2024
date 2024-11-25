@@ -12,6 +12,7 @@ use App\Models\ville;
 use App\Models\zonesante;
 use Illuminate\Http\Request;
 use App\Models\structureSanteModel;
+use Illuminate\Support\Facades\Auth;
 
 class Pyramide extends Controller
 {
@@ -21,6 +22,7 @@ class Pyramide extends Controller
             'name' => 'required',
         ]);
 
+        $user = Auth::user();
         if (province::where('name', $request->name)->exists()) {
             return response()->json([
                 "message" => 'Cette province existe déjà dans le système',

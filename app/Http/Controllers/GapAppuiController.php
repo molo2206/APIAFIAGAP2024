@@ -16,9 +16,10 @@ use App\Models\TypeGapModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+
 class GapAppuiController extends Controller
 {
-     public function PositionnementPartenaire(Request $request)
+    public function PositionnementPartenaire(Request $request)
     {
         $request->validate([
             'gap_apuis_id' => 'required',
@@ -29,11 +30,11 @@ class GapAppuiController extends Controller
 
         $user = Auth::user();
         foreach ($request->gap_apuis_id as $item) {
-            if (PositiontionPartenaireModel::where('gap_apuis_id', $item)->where('userid', $user->id)->where('status',1)->first() == null) {
+            if (PositiontionPartenaireModel::where('gap_apuis_id', $item)->where('userid', $user->id)->where('status', 1)->first() == null) {
                 $gap_appui = GapAppuiModel::find($item['id_appui']);
                 $gap = GapsModel::find($gap_appui->gapid);
                 $structure = structureSanteModel::find($gap->orgid);
-                $position = PositiontionPartenaireModel::create([
+                PositiontionPartenaireModel::create([
                     'gap_apuis_id' => $item['id_appui'],
                     'date_approxitive_debut_appui' => $request->date_approxitive_debut_appui,
                     'budget_disponible' => $request->budget_disponible,
@@ -55,7 +56,7 @@ class GapAppuiController extends Controller
         $datagap_appui = PositiontionPartenaireModel::with('gap_appuis.gap.datastructure')
             ->where('userid', $user->id)->get();
         $email = "info@cosamed.org";
-        Mail::to($user->email)->send(new PositionCustomer($user->email,$user->full_name));
+        Mail::to($user->email)->send(new PositionCustomer($user->email, $user->full_name));
         Mail::to($email)->send(new PositionnementGap(
             $user->email,
             $user->phone,
@@ -84,80 +85,69 @@ class GapAppuiController extends Controller
         ]);
 
         $user = Auth::user();
-        $namepermission = 'valide_gap';
-        $permission = Permission::where('name', $namepermission)->first();
-        $organisation = Organisation::find($request->orgid);
-        if ($organisation) {
-            if ($permission) {
-                $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-                $permission_valide_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-                    ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-                if ($permission_valide_gap) {
-                    $datagap = GapsModel::where('id', $gapid)->where('status', 1)->first();
-                    if ($datagap) {
-                        $datagap->gap_appui()->detach();
-                        foreach ($request->gap_appuis as $item) {
-                            if (TypeGapModel::where('name', $item['key'])) {
-                                TypeGapModel::create([
-                                    'name' => $item['key'],
-                                ]);
-                                $datagap->gap_appui()->attach([$datagap->id =>
-                                [
-                                    'key' => $item['key'],
-                                    'value' => $item['value'],
-                                ]]);
-                            } else {
-                                $datagap->gap_appui()->attach([$datagap->id =>
-                                [
-                                    'key' => $item['key'],
-                                    'value' => $item['value'],
-                                ]]);
-                            }
+        if ($user->checkPermissions('Gap', 'status')) {
+            $organisation = Organisation::find($request->orgid);
+            if ($organisation) {
+                $datagap = GapsModel::where('id', $gapid)->where('status', 1)->first();
+                if ($datagap) {
+                    $datagap->gap_appui()->detach();
+                    foreach ($request->gap_appuis as $item) {
+                        if (TypeGapModel::where('name', $item['key'])) {
+                            TypeGapModel::create([
+                                'name' => $item['key'],
+                            ]);
+                            $datagap->gap_appui()->attach([$datagap->id =>
+                            [
+                                'key' => $item['key'],
+                                'value' => $item['value'],
+                            ]]);
+                        } else {
+                            $datagap->gap_appui()->attach([$datagap->id =>
+                            [
+                                'key' => $item['key'],
+                                'value' => $item['value'],
+                            ]]);
                         }
-                        return response()->json([
-                            "message" => "success",
-                            "code" => 200,
-                            "data" => GapsModel::with(
-                                'datauser',
-                                'suite1.suite2',
-                                'dataprovince',
-                                'dataterritoir',
-                                'datazone',
-                                'dataaire',
-                                'datastructure',
-                                'datapopulationEloigne',
-                                'datamaladie.maladie',
-                                'allcrise.crise',
-                                'datamedicament.medicament',
-                                'datapartenaire.partenaire.allindicateur.paquetappui',
-                                'datatypepersonnel.typepersonnel',
-                                'datascorecard.dataquestion.datarubrique',
-                                'images',
-                                'gap_appuis'
-                            )->where('userid', $user->id)->where('id', $datagap->id)->where('orguserid', $request->orgid)->where('status', 1)->first(),
-                        ], 200);
-                    } else {
-                        return response()->json([
-                            "message" => "Ce gapid n'est pas reconnue dans le système!",
-                            "code" => 402,
-                        ], 402);
                     }
+                    return response()->json([
+                        "message" => "success",
+                        "code" => 200,
+                        "data" => GapsModel::with(
+                            'datauser',
+                            'suite1.suite2',
+                            'dataprovince',
+                            'dataterritoir',
+                            'datazone',
+                            'dataaire',
+                            'datastructure',
+                            'datapopulationEloigne',
+                            'datamaladie.maladie',
+                            'allcrise.crise',
+                            'datamedicament.medicament',
+                            'datapartenaire.partenaire.allindicateur.paquetappui',
+                            'datatypepersonnel.typepersonnel',
+                            'datascorecard.dataquestion.datarubrique',
+                            'images',
+                            'gap_appuis'
+                        )->where('userid', $user->id)->where('id', $datagap->id)->where('orguserid', $request->orgid)->where('status', 1)->first(),
+                    ], 200);
                 } else {
                     return response()->json([
-                        "message" => "Vous ne pouvez pas éffectuer cette action"
+                        "message" => "Ce gapid n'est pas reconnue dans le système!",
+                        "code" => 402,
                     ], 402);
                 }
             } else {
                 return response()->json([
-                    "message" => "cette permission" . $permission->name . "n'existe pas",
+                    "message" => "cette organisation" . $organisation->name . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisation" . $organisation->name . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 

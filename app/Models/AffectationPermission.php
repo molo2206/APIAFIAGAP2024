@@ -16,6 +16,11 @@ class AffectationPermission extends Model
     protected $fillable = [
         'affectationid',
         'permissionid',
+        'create',
+        'update',
+        'delete',
+        'read',
+        'status',
     ];
 
     public function permission()

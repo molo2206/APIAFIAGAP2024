@@ -167,8 +167,7 @@ class ActiviteController extends Controller
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
         if ($organisation) {
 
-            if ($permission_projet)
-            {
+            if ($permission_projet) {
                 $datactivite = ActiviteProjetModel::where('id', $id)->first();
                 $datactivite->projetid = $request->projetid;
                 $datactivite->orgid = $request->orgid;
@@ -179,8 +178,7 @@ class ActiviteController extends Controller
                 $datactivite->periode_rapportage = $request->periode_rapportage;
                 $datactivite->save();
 
-                if ($datactivite)
-                {
+                if ($datactivite) {
                     $activitebencible = BeneficeCibleProjet::where('activiteid', $datactivite->id)->first();
                     $activitebencible->orguserid = $request->orgid;
                     $activitebencible->homme_cible = $request->homme_cible;
@@ -286,13 +284,10 @@ class ActiviteController extends Controller
     public function get_activite($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'view_activite')->first();
+
         $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Activite', 'read')) {
+            if ($organisation) {
                 return response()->json([
                     "message" => "Modification avec succès",
                     "data" => ActiviteModel::with(
@@ -308,31 +303,27 @@ class ActiviteController extends Controller
                         'dataconsultationexterne',
                         'dataconsultationcliniquemobile',
                         'paquetappui.indicateur'
-                    )->where('org_make_repport', $orgid)->where('status',1)->where('deleted',0)->orderBy('created_at', 'desc')->where('status', 0)->where('deleted', 0)->get()
+                    )->where('org_make_repport', $orgid)->where('status', 1)->where('deleted', 0)->orderBy('created_at', 'desc')->where('status', 0)->where('deleted', 0)->get()
                 ]);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function get_all_activite($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'view_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Project', 'read')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+            if ($organisation) {
                 return response()->json([
                     "message" => "Modification avec succès",
                     "data" => ActiviteModel::with(
@@ -352,15 +343,15 @@ class ActiviteController extends Controller
                 ]);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -394,7 +385,7 @@ class ActiviteController extends Controller
                     'dataconsultationcliniquemobile',
                     'autresinfoprojet',
                     'infosVaccinations.Vaccination',
-                )->where('id', $id)->where('status',1)->where('deleted',0)->orderBy('created_at', 'desc')->first(),
+                )->where('id', $id)->where('deleted', 0)->orderBy('created_at', 'desc')->first(),
             ]);
         } else {
             return response()->json([

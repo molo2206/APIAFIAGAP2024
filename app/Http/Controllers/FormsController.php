@@ -18,7 +18,8 @@ class FormsController extends Controller
     {
 
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'read'))
+        {
             return response()->json([
                 "message" => "Forms list",
                 "code" => "200",
@@ -71,7 +72,8 @@ class FormsController extends Controller
     public function get_by_org($id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'read'))
+        {
             return response()->json([
                 "message" => "Forms list",
                 "code" => "200",
@@ -89,7 +91,8 @@ class FormsController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'create'))
+        {
             $request->validate([
                 'title' => 'required',
                 'description' => 'required',
@@ -139,7 +142,8 @@ class FormsController extends Controller
     public function update(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'update'))
+        {
             $form = formsModel::find($id);
             if ($form) {
                 $form->title =  $request->title;
@@ -168,7 +172,8 @@ class FormsController extends Controller
     public function status(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'status'))
+        {
             $form = formsModel::find($id);
             if ($form) {
                 $form->status = $request->status;
@@ -195,7 +200,8 @@ class FormsController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_form')) {
+        if ($user->checkPermissions('Formulaire', 'delete'))
+        {
             $form = formsModel::find($id);
             if ($form) {
                 $form->deleted = 1;

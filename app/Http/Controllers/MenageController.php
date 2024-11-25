@@ -34,17 +34,13 @@ class MenageController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_menage')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        $code = mt_rand(1, 9999999999);
-        $codemenage = 'MEN-' . $code;
-        $datamenage = MenageModel::where('code_menage', $codemenage)->exists();
 
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Menage', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            $code = mt_rand(1, 9999999999);
+            $codemenage = 'MEN-' . $code;
+            $datamenage = MenageModel::where('code_menage', $codemenage)->exists();
+            if ($organisation) {
                 if ($datamenage) {
                     $code = mt_rand(1, 9999999999);
                     $codemenage = 'MEN-' . $code;
@@ -80,15 +76,15 @@ class MenageController extends Controller
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -104,18 +100,15 @@ class MenageController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_menage')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        $code = mt_rand(1, 9999999999);
-        $codemenage = 'MEN-' . $code;
-        $datamenage = MenageModel::where('code_menage', $codemenage)->exists();
+        if ($user->checkPermissions('Menage', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            $code = mt_rand(1, 9999999999);
+            $codemenage = 'MEN-' . $code;
+            $datamenage = MenageModel::where('code_menage', $codemenage)->exists();
 
-        $site = SiteDeplaceModel::where('name', $request->site_id)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+            $site = SiteDeplaceModel::where('name', $request->site_id)->first();
+            if ($organisation) {
+
                 if ($datamenage) {
                     $code = mt_rand(1, 9999999999);
                     $codemenage = 'MEN-' . $code;
@@ -151,15 +144,15 @@ class MenageController extends Controller
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function listmenage()
@@ -175,14 +168,11 @@ class MenageController extends Controller
     public function delete_menage(Request $request)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_menage')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        $datamenage = MenageModel::where('id', $request->id)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+
+        if ($user->checkPermissions('Menage', 'delete')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            $datamenage = MenageModel::where('id', $request->id)->first();
+            if ($organisation) {
                 if ($datamenage) {
                     $datamenage->deleted = 1;
                     $datamenage->save();
@@ -196,15 +186,15 @@ class MenageController extends Controller
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 

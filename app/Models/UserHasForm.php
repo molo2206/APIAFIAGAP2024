@@ -19,7 +19,8 @@ class UserHasForm extends Model
         'sem_epid'
     ];
 
-    public function response(){
+    public function response()
+    {
         return $this->belongsToMany(FieldsModel::class, 'response_forms', 'hasformid', 'field_id')
         ->withPivot(["hasformid", "field_id","value"]);
     }

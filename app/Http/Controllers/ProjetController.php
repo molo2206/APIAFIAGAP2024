@@ -37,13 +37,9 @@ class ProjetController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Project', 'read')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 $projet = ProjetModel::create([
                     'title_projet' => $request->title_projet,
                     'org_make_repport' => $request->org_make_repport,
@@ -108,15 +104,15 @@ class ProjetController extends Controller
                 ], 200);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function update_projet(Request $request, $id)
@@ -127,13 +123,9 @@ class ProjetController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Project', 'update')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 if (ProjetModel::where('id', $id)->exists()) {
                     $projet = ProjetModel::where('id', $id)->first();
                     $projet->title_projet = $request->title_projet;
@@ -200,15 +192,15 @@ class ProjetController extends Controller
                 ]);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
     public function getStructureByProjet($id)
@@ -248,7 +240,7 @@ class ProjetController extends Controller
     public function getAll_activites()
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_activite')) {
+        if ($user->checkPermissions('Activite', 'read')) {
             return response()->json([
                 "message" => "Success",
                 "code" => 200,
@@ -287,13 +279,9 @@ class ProjetController extends Controller
     public function getactivites($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
         $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Project', 'read')) {
+            if ($organisation) {
                 return response()->json([
                     "message" => "Success",
                     "code" => 200,
@@ -323,15 +311,15 @@ class ProjetController extends Controller
                 ], 200);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -339,13 +327,9 @@ class ProjetController extends Controller
     public function getprojet($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Project', 'read')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+            if ($organisation) {
                 return response()->json([
                     "message" => "Success",
                     "code" => 200,
@@ -360,28 +344,24 @@ class ProjetController extends Controller
                 ], 200);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
     public function Get_One_project($id, $orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Activite', 'read')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+            if ($organisation) {
                 return response()->json([
                     "message" => "Success",
                     "code" => 200,
@@ -396,29 +376,24 @@ class ProjetController extends Controller
                 ], 200);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
     public function get_all_activites($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Activite', 'read')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+            if ($organisation) {
                 return response()->json([
                     "message" => "Success",
                     "code" => 200,
@@ -432,9 +407,9 @@ class ProjetController extends Controller
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -448,13 +423,9 @@ class ProjetController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Activite', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 foreach ($request->struturesantes as $item) {
                     //$projet->struturesantes()->detach();
                     $projet = ProjetModel::where('id', $request->projetid)->first();
@@ -487,15 +458,15 @@ class ProjetController extends Controller
                 ]);
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -506,13 +477,9 @@ class ProjetController extends Controller
             'orgid' => 'required',
         ]);
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Activite', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 //UPDATE PYRAMIDE
                 $rayon_action = RayonActionProjetModel::where('id', $id)->first();
                 foreach ($request->struturesantes as $item) {
@@ -528,15 +495,15 @@ class ProjetController extends Controller
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -557,18 +524,14 @@ class ProjetController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_projet = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-
-            if ($permission_projet) {
+        if ($user->checkPermissions('Activite', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 $dataprojet = ProjetModel::where('id', $idprojet)->first();
                 $typeimpactid = TypeReponseProjet::where('id', $request->typeimpactid)->first();
                 if ($dataprojet) {
-                    if ($typeimpactid) {
+                    if ($typeimpactid)
+                    {
                         $activity = ActiviteProjetModel::create([
                             "projetid" => $dataprojet->id,
                             "orgid" => $request->orgid,
@@ -693,9 +656,9 @@ class ProjetController extends Controller
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402,
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -705,19 +668,11 @@ class ProjetController extends Controller
             "orgid" => 'required',
         ]);
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_activite')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_projet = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-
-            if ($permission_projet) {
-
+        if ($user->checkPermissions('Activite', 'update')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 $dataprojet = ProjetModel::find($idprojet);
-
                 if ($dataprojet) {
-
                     BeneficeCibleProjet::create([
                         'projetid' => $dataprojet->id,
                         "structureid" => $request->structureid,
@@ -817,9 +772,9 @@ class ProjetController extends Controller
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402,
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 

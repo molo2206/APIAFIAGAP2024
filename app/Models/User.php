@@ -65,7 +65,7 @@ class User extends Authenticatable
 
     public function affectation1()
     {
-        return $this->belongsTo(Organisation::class, 't__affectations', 'orgid', 'roleid');
+        return $this->belongsTo(Organisation::class, 't__affectations', 'userid', 'orgid');
     }
 
     public function token()
@@ -80,7 +80,8 @@ class User extends Authenticatable
 
     public function checkPermission($name)
     {
-        $exis = $this->engagement_as_permission->permissions()->where('name', $name)->first();
+        $exis = $this->engagement_as_permission->permission()->where('name', $name)
+            ->where('status', 1)->where('deleted', 0)->first();
         if ($exis) {
             if ($exis->access) {
                 return true;
@@ -89,6 +90,18 @@ class User extends Authenticatable
             }
         }
         return $exis;
+    }
+    public function checkPermissions($name, $action)
+    {
+        $exis = $this->engagement_as_permission->permission()->where('name', $name)->first();
+        if ($exis) {
+            if ($exis->access->$action) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 
     public function typeUser()

@@ -16,7 +16,6 @@ class AffectationModel extends Model
 
     protected $fillable = [
         'orgid',
-        'roleid',
         'userid',
         'id'
     ];
@@ -24,12 +23,6 @@ class AffectationModel extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'userid', 'id');
-    }
-
-
-    public function role()
-    {
-        return $this->belongsTo(RoleModel::class, 'roleid', 'id');
     }
 
     public function organisation()
@@ -50,6 +43,12 @@ class AffectationModel extends Model
 
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 't__affectation_permission', 'affectationid', 'permissionid')->as('access');
+        return $this->belongsToMany(Permission::class, 't__affectation_permission', 'affectationid', 'permissionid')->as('access')
+            ->withPivot(['create', 'read', 'update', 'delete', 'status'])
+            ->as('access')->where('deleted', 0);
+    }
+    public function permission()
+    {
+        return $this->belongsToMany(RessourceModel::class, 't_roles_has_permissions', 'affectation', 'ressourceid')->withPivot(['create', 'read', 'update', 'delete', 'status'])->as('access');
     }
 }

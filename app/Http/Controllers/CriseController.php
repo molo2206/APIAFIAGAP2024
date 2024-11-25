@@ -18,14 +18,9 @@ class CriseController extends Controller
             "orgid" => "required",
         ]);
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_crise')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
-
+        if ($user->checkPermissions('Crise', 'create')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
                 $datacrise = TypeCrise::where('name', $request->name)->first();
                 if ($datacrise) {
                     return response()->json([
@@ -42,17 +37,16 @@ class CriseController extends Controller
                     ], 200);
                 }
             } else {
-
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
@@ -63,13 +57,10 @@ class CriseController extends Controller
             "orgid" => "required",
         ]);
         $user = Auth::user();
-        $permission = Permission::where('name', 'update_crise')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
+        if ($user->checkPermissions('Crise', 'update')) {
+            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+            if ($organisation) {
+
                 $type = TypeCrise::find($id);
                 if ($type) {
                     $type->name = $request->name;
@@ -83,28 +74,25 @@ class CriseController extends Controller
                     ], 422);
                 }
             } else {
-
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                     "code" => 402
                 ], 402);
             }
         } else {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => "not authorized",
+                "code" => 404,
+            ], 404);
         }
     }
 
     public function ListeCrise(Request $request)
     {
-
-                return response()->json([
-                    "message" => "Liste des crises",
-                    "code" => "200",
-                    "data" => TypeCrise::all(),
-                ]);
-         
+        return response()->json([
+            "message" => "Liste des crises",
+            "code" => "200",
+            "data" => TypeCrise::all(),
+        ]);
     }
 }

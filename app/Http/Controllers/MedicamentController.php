@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 
 class MedicamentController extends Controller
 {
-    public function AddMedicament(Request $request){
+    public function AddMedicament(Request $request)
+    {
         $request->validate([
                 'name' => 'required',
         ]);

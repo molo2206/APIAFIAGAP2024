@@ -66,7 +66,7 @@ class FieldController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'create')) {
             $request->validate([
                 'form_id' => 'required',
                 'fields' => 'required',
@@ -131,7 +131,7 @@ class FieldController extends Controller
     public function update(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'update')) {
             $request->validate([
                 'name' => 'required',
                 'label' => 'required',
@@ -140,9 +140,7 @@ class FieldController extends Controller
             ]);
 
             $form = FieldsModel::with('fields.typefield')->find($id);
-
             if ($form) {
-
                 $form->name = $form->name ? $form->name : $request->name;
                 $form->label = $form->label ? $form->label : $request->label;
                 $form->form_id = $form->form_id ? $form->form_id : $request->form_id;
@@ -173,7 +171,7 @@ class FieldController extends Controller
     public function addfield(Request $request)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'create')) {
             $request->validate([
                 'form_id' => 'required',
                 'label' => 'required',
@@ -227,7 +225,7 @@ class FieldController extends Controller
     public function status(Request $request, $id)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'status')) {
             $form = FieldsModel::find($id);
             if ($form) {
                 $form->status = $request->status;
@@ -255,7 +253,8 @@ class FieldController extends Controller
     public function destroy($id, $field)
     {
         $user = Auth::user();
-        if ($user->checkPermission('create_gap')) {
+        if ($user->checkPermissions('Formulaire', 'delete'))
+        {
             $form = formsModel::find($id);
             if ($form) {
                 $field = $form->fields()->find($field);
