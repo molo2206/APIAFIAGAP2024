@@ -10,19 +10,20 @@ use Laravel\Sanctum\HasApiTokens;
 
 class ActiviteProjetModel extends Model
 {
-    use HasApiTokens, HasFactory, Notifiable,HasUuids;
-    protected $table="t_activite_projets";
+    use HasApiTokens, HasFactory, Notifiable, HasUuids;
+    protected $table = "t_activite_projets";
     protected $fillable = [
         "id",
         "projetid",
         "orgid",
-        "cohp_relais",
+        "cohp_relais_id",
         "date_rapportage",
         "indicateurid",
         "structureid",
         "typeimpactid",
         "semaine",
         "periode_rapportage",
+        "type"
     ];
 
     public function indicateur()
@@ -75,9 +76,10 @@ class ActiviteProjetModel extends Model
     {
         return $this->belongsToMany(structureSanteModel::class, 't_rayon_action_projet', 'projetid', 'structureid');
     }
-    public function infosVaccinations(){
-        return $this->hasMany(DetailProjetVaccines::class, 'activiteid','id');
-      }
+    public function infosVaccinations()
+    {
+        return $this->hasMany(DetailProjetVaccines::class, 'activiteid', 'id');
+    }
     public function autresinfoprojet()
     {
         return $this->belongsTo(AutreInfoProjets::class, 'id', 'activiteid');
@@ -89,8 +91,7 @@ class ActiviteProjetModel extends Model
 
     public function indicataire()
     {
-        return $this->belongsToMany(indicateur::class, 't_activite_indicateur', 'activiteid','indicateurid')->
-        withPivot(['indicateurid'])->as('pci');
+        return $this->belongsToMany(indicateur::class, 't_activite_indicateur', 'activiteid', 'indicateurid')->withPivot(['indicateurid'])->as('pci');
     }
 
 
@@ -107,6 +108,12 @@ class ActiviteProjetModel extends Model
 
     public function infosVaccination()
     {
-      return $this->belongsToMany(TypeVaccin::class, 't_detail_projet_vaccines', 'activiteid', 'typevaccinid');
+        return $this->belongsToMany(TypeVaccin::class, 't_detail_projet_vaccines', 'activiteid', 'typevaccinid');
+    }
+
+
+    public function cohp_relais()
+    {
+        return $this->belongsTo(CohpModel::class, 'cohp_relais_id', 'id');
     }
 }

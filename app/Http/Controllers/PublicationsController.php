@@ -42,10 +42,10 @@ class PublicationsController extends Controller
                 "cat_id" => $request->cat_id,
 
             ]);
-            $dataToken_for_user = TokenUsers::all();
-            foreach ($dataToken_for_user as $item) {
-                PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
-            }
+            // $dataToken_for_user = TokenUsers::all();
+            // foreach ($dataToken_for_user as $item) {
+            //     PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+            // }
             foreach (User::get() as $key => $value) {
                 Notifications::create([
                     "user_id" => $value->id,
@@ -92,10 +92,10 @@ class PublicationsController extends Controller
             $pub->cat_id = $request->cat_id;
             $pub->save();
 
-            $dataToken_for_user = TokenUsers::all();
-            foreach ($dataToken_for_user as $item) {
-                PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
-            }
+            // $dataToken_for_user = TokenUsers::all();
+            // foreach ($dataToken_for_user as $item) {
+            //     PushNotification::sendPushNotification($item->token, $request->title, $request->content, $image);
+            // }
             foreach (User::get() as $key => $value) {
                 Notifications::create([
                     "user_id" => $value->id,

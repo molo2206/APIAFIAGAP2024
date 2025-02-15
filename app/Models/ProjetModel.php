@@ -37,7 +37,6 @@ class ProjetModel extends Model
         'bailleur_de_fond',
         'fond_louer_projet',
         'fond_operationel_disponible',
-        'cohp_relais',
         'date_debut_projet',
         'date_fin_projet',
         'type_benef',
@@ -110,8 +109,4 @@ class ProjetModel extends Model
         return $this->belongsTo(TypeProjet::class, 'typeprojetid', 'id');
     }
 
-    public function cohp_relais()
-    {
-        return $this->belongsTo(CohpModel::class, 'cohp_relais', 'id');
-    }
 }

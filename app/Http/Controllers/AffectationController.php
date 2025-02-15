@@ -23,7 +23,6 @@ class AffectationController extends Controller
             'orgid' => 'required',
             'orgid_affect' => 'required',
             'permissionid' => 'required',
-
         ]);
         $user = Auth::user();
         if ($user->checkPermissions('Affectation', 'create')) {

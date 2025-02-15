@@ -37,7 +37,7 @@ class ProjetController extends Controller
         ]);
 
         $user = Auth::user();
-        if ($user->checkPermissions('Project', 'read')) {
+        if ($user->checkPermissions('Project', 'create')) {
             $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
             if ($organisation) {
                 $projet = ProjetModel::create([
@@ -65,7 +65,6 @@ class ProjetController extends Controller
                     'resultat_collectif' => $request->resultat_collectif,
                     'axe_strategique' => $request->axe_strategique,
                     'projet_vise' => $request->projet_vise,
-                    'cohp_relais' => $request->cohp_relais,
                     'odd' => $request->odd,
                     'userid' => $user->id,
                     'orguserid' => $request->orgid,
@@ -152,7 +151,7 @@ class ProjetController extends Controller
                     $projet->date_debut_projet = $request->date_debut_projet;
                     $projet->date_fin_projet = $request->date_fin_projet;
                     $projet->type_benef = $request->type_benef;
-                    $projet->cohp_relais = $request->cohp_relais;
+                    $projet->modalite = $request->modalite;
                     $projet->save();
 
                     $projet->struturesantes()->detach();
@@ -245,7 +244,7 @@ class ProjetController extends Controller
                 "message" => "Success",
                 "code" => 200,
                 "data" => ActiviteProjetModel::with(
-                    "projet.cohp_relais",
+                    "cohp_relais",
                     "projet.typeprojet",
                     "projet.datatypeimpact.typeimpact",
                     "projet.datatypeimpact.indicateur.indicateur",
@@ -256,13 +255,8 @@ class ProjetController extends Controller
                     'projet.data_organisation_mise_en_oeuvre.type_org',
                     "typeimpacts",
                     'databeneficecible',
-                    'databeneficecible',
-                    'databeneficecible',
-                    'databeneficeatteint',
                     'databeneficeatteint',
                     'dataconsultationexterne',
-                    'dataconsultationexterne',
-                    'dataconsultationcliniquemobile',
                     'dataconsultationcliniquemobile',
                     'autresinfoprojet',
                     'infosVaccinations.Vaccination',
@@ -286,7 +280,7 @@ class ProjetController extends Controller
                     "message" => "Success",
                     "code" => 200,
                     "data" => ActiviteProjetModel::with(
-                        "projet.cohp_relais",
+                        "cohp_relais",
                         "projet.typeprojet",
                         "projet.datatypeimpact.typeimpact",
                         "projet.datatypeimpact.indicateur.indicateur",
@@ -518,7 +512,6 @@ class ProjetController extends Controller
 
     public function create_detail_projet(Request $request, $idprojet)
     {
-
         $request->validate([
             "orgid" => 'required',
         ]);
@@ -526,15 +519,141 @@ class ProjetController extends Controller
         $user = Auth::user();
         if ($user->checkPermissions('Activite', 'create')) {
             $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-            if ($organisation) {
-                $dataprojet = ProjetModel::where('id', $idprojet)->first();
-                $typeimpactid = TypeReponseProjet::where('id', $request->typeimpactid)->first();
+            $dataprojet = ProjetModel::where('id', $idprojet)->first();
+            $typeimpactid = TypeReponseProjet::where('id', $request->typeimpactid)->first();
+            if ($request->type === "5W") {
+                if ($organisation) {
+                    if ($dataprojet) {
+                        if ($typeimpactid) {
+                            $activity = ActiviteProjetModel::create([
+                                'type' => $request->type,
+                                "projetid" => $dataprojet->id,
+                                "orgid" => $request->orgid,
+                                "cohp_relais_id" => $request->cohp_relais,
+                                "date_rapportage" => $request->date_rapportage,
+                                "structureid" => $request->structureid,
+                                "indicateurid" => $request->indicateurid,
+                                "typeimpactid" => $typeimpactid->id,
+                                "periode_rapportage" => $request->periode_rapportage
+                            ]);
+
+                            if ($dataprojet) {
+                                BeneficeCibleProjet::create([
+                                    'activiteid' => $activity->id,
+                                    'orguserid' => $request->orgid,
+                                    'homme_cible' => $request->homme_cible,
+                                    'femme_cible' =>  $request->femme_cible,
+
+                                    'enfant_garcon_moin_cinq' =>  $request->enfant_garcon_moin_cinq,
+                                    'enfant_fille_moin_cinq'  =>  $request->enfant_fille_moin_cinq,
+                                    'personne_cible_handicap' =>  $request->personne_cible_handicap,
+
+                                    "garcon_cible_cinq_dix_septe" => $request->garcon_cible_cinq_dix_septe,
+                                    "fille_cible_cinq_dix_septe" => $request->fille_cible_cinq_dix_septe,
+
+                                    "homme_cible_dix_huit_cinquante_neuf" => $request->homme_cible_dix_huit_cinquante_neuf,
+                                    "femme_cible_dix_huit_cinquante_neuf" => $request->femme_cible_dix_huit_cinquante_neuf,
+
+                                    "homme_cible_plus_cinquante_neuf" => $request->homme_cible_plus_cinquante_neuf,
+                                    "femme_cible_plus_cinquante_neuf" => $request->femme_cible_plus_cinquante_neuf,
+                                    'total_cible' =>  $request->total_cible,
+                                ]);
+
+                                BeneficeAtteintProjet::create([
+                                    'activiteid' => $activity->id,
+                                    'orguserid' => $request->orgid,
+                                    "homme_atteint" => $request->homme_atteint,
+                                    "femme_atteint" =>  $request->femme_atteint,
+
+                                    "enfant_garcon_moin_cinq" =>  $request->enfant_garcon_moin_cinq_atteint,
+                                    "enfant_fille_moin_cinq" =>  $request->enfant_fille_moin_cinq_atteint,
+
+                                    "personne_atteint_handicap" =>  $request->personne_atteint_handicap,
+                                    "garcon_atteint_cinq_dix_septe" => $request->garcon_atteint_cinq_dix_septe,
+                                    "fille_atteint_cinq_dix_septe" => $request->fille_atteint_cinq_dix_septe,
+                                    "homme_atteint_dix_huit_cinquante_neuf" => $request->homme_atteint_dix_huit_cinquante_neuf,
+                                    "femme_atteint_dix_huit_cinquante_neuf" => $request->femme_atteint_dix_huit_cinquante_neuf,
+                                    "homme_atteint_plus_cinquante_neuf" => $request->homme_atteint_plus_cinquante_neuf,
+                                    "femme_atteint_plus_cinquante_neuf" => $request->femme_atteint_plus_cinquante_neuf,
+                                    "total_atteint" => $request->total_atteint
+                                ]);
+
+                                ConsultationExterneFosaProjet::create([
+                                    'activiteid' => $activity->id,
+                                    'orguserid' => $request->orgid,
+                                    "consulte_moin_cinq_fosa" => $request->consulte_moin_cinq_fosa,
+                                    "consulte_cinq_dix_sept_fosa" => $request->consulte_cinq_dix_sept_fosa,
+                                    "homme_fosa_dix_huit_plus_fosa" => $request->homme_fosa_dix_huit_plus_fosa,
+                                    "femme_fosa_dix_huit_plus_fosa" => $request->femme_fosa_dix_huit_plus_fosa,
+                                ]);
+
+                                ConsultationCliniqueMobileProjet::create([
+                                    'activiteid' => $activity->id,
+                                    'orguserid' => $request->orgid,
+                                    "consulte_moin_cinq_mob" => $request->consulte_moin_cinq_mob,
+                                    "consulte_cinq_dix_sept_mob" => $request->consulte_cinq_dix_sept_mob,
+                                    "homme_dix_huit_plus_mob" => $request->homme_dix_huit_plus_mob,
+                                    "femme_dix_huit_plus_mob" => $request->femme_dix_huit_plus_mob,
+                                ]);
+
+                                AutreInfoProjets::create([
+                                    "activiteid" => $activity->id,
+                                    'orguserid' => $request->orgid,
+                                    'description_activite' => $request->description_activite,
+                                    'statut_activite' => $request->statut_activite,
+                                    "nbr_malnutrition" => $request->nbr_malnutrition,
+                                    "remarque" => $request->remarque,
+                                    'nbr_accouchement' => $request->nbr_accouchement,
+                                    'email' => $request->email,
+                                    'phone' => $request->phone,
+                                    'date_rapportage' => $request->date_rapportage,
+                                    'nbr_cpn' => $request->nbr_cpn,
+                                ]);
+
+                                $activity->infosVaccination()->detach();
+                                foreach ($request->infosVaccination as $item) {
+                                    $activity->infosVaccination()->attach([$activity->id =>
+                                    [
+                                        'typevaccinid' => $item['typevaccinid'],
+                                        'nbr_vaccine' => $item['nbr_vaccine'],
+                                    ]]);
+                                }
+                            } else {
+                                return response()->json([
+                                    "message" => "Project not found!",
+                                    "code" => 402
+                                ], 402);
+                            }
+                        } else {
+                            return response()->json([
+                                "message" => "Error type impact not found!",
+                                "code" => 402
+                            ], 402);
+                        }
+                        return response()->json([
+                            "message" => "Success",
+                            "code" => 200
+                        ], 200);
+                    } else {
+                        return response()->json([
+                            "message" => "Cette id du projet n'est pas reconnue dans le système!",
+                            "code" => 402
+                        ], 402);
+                    }
+                } else {
+                    return response()->json([
+                        "message" => "Vous ne pouvez pas éffectuer cette action",
+                        "code" => 402
+                    ], 402);
+                }
+            } else {
                 if ($dataprojet) {
-                    if ($typeimpactid)
-                    {
+                    if ($typeimpactid) {
                         $activity = ActiviteProjetModel::create([
+                            'type' => $request->type,
                             "projetid" => $dataprojet->id,
                             "orgid" => $request->orgid,
+                            "cohp_relais_id" => $request->cohp_relais,
                             "date_rapportage" => $request->date_rapportage,
                             "structureid" => $request->structureid,
                             "indicateurid" => $request->indicateurid,
@@ -583,25 +702,6 @@ class ProjetController extends Controller
                                 "total_atteint" => $request->total_atteint
                             ]);
 
-                            ConsultationExterneFosaProjet::create([
-                                'activiteid' => $activity->id,
-                                'orguserid' => $request->orgid,
-                                "consulte_moin_cinq_fosa" => $request->consulte_moin_cinq_fosa,
-                                "consulte_cinq_dix_sept_fosa" => $request->consulte_cinq_dix_sept_fosa,
-                                "homme_fosa_dix_huit_plus_fosa" => $request->homme_fosa_dix_huit_plus_fosa,
-                                "femme_fosa_dix_huit_plus_fosa" => $request->femme_fosa_dix_huit_plus_fosa,
-                            ]);
-
-                            ConsultationCliniqueMobileProjet::create([
-                                'activiteid' => $activity->id,
-                                'orguserid' => $request->orgid,
-                                "consulte_moin_cinq_mob" => $request->consulte_moin_cinq_mob,
-                                "consulte_cinq_dix_sept_mob" => $request->consulte_cinq_dix_sept_mob,
-                                "homme_dix_huit_plus_mob" => $request->homme_dix_huit_plus_mob,
-                                "femme_dix_huit_plus_mob" => $request->femme_dix_huit_plus_mob,
-                            ]);
-
-
                             AutreInfoProjets::create([
                                 "activiteid" => $activity->id,
                                 'orguserid' => $request->orgid,
@@ -615,15 +715,6 @@ class ProjetController extends Controller
                                 'date_rapportage' => $request->date_rapportage,
                                 'nbr_cpn' => $request->nbr_cpn,
                             ]);
-
-                            $activity->infosVaccination()->detach();
-                            foreach ($request->infosVaccination as $item) {
-                                $activity->infosVaccination()->attach([$activity->id =>
-                                [
-                                    'typevaccinid' => $item['typevaccinid'],
-                                    'nbr_vaccine' => $item['nbr_vaccine'],
-                                ]]);
-                            }
                         } else {
                             return response()->json([
                                 "message" => "Project not found!",
@@ -648,11 +739,6 @@ class ProjetController extends Controller
                         "code" => 402
                     ], 402);
                 }
-            } else {
-                return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
-                    "code" => 402
-                ], 402);
             }
         } else {
             return response()->json([
@@ -668,113 +754,165 @@ class ProjetController extends Controller
             "orgid" => 'required',
         ]);
         $user = Auth::user();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
         if ($user->checkPermissions('Activite', 'update')) {
-            $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
             if ($organisation) {
-                $dataprojet = ProjetModel::find($idprojet);
-                if ($dataprojet) {
-                    BeneficeCibleProjet::create([
-                        'projetid' => $dataprojet->id,
-                        "structureid" => $request->structureid,
-                        "indicateurid" => $request->indicateurid,
-                        'homme_cible' => $request->homme_cible,
-                        'femme_cible' =>  $request->femme_cible,
-                        'enfant_garcon_moin_cinq' =>  $request->enfant_garcon_moin_cinq,
-                        'enfant_fille_moin_cinq'  =>  $request->enfant_fille_moin_cinq,
-                        'personne_cible_handicap' =>  $request->personne_cible_handicap,
+                if ($request->type == "5w") {
+                    $datactivite = ActiviteProjetModel::where('id', $id)->first();
+                    $datactivite->type = $request->type;
+                    $datactivite->projetid = $request->projetid;
+                    $datactivite->orgid = $request->orgid;
+                    $datactivite->date_rapportage = $request->date_rapportage;
+                    $datactivite->structureid = $request->structureid;
+                    $datactivite->indicateurid = $request->indicateurid;
+                    $datactivite->typeimpactid = $request->type_reponse;
+                    $datactivite->cohp_relais_id = $request->cohp_relais;
+                    $datactivite->periode_rapportage = $request->periode_rapportage;
+                    $datactivite->save();
 
-                        "garcon_cible_cinq_dix_septe" => $request->garcon_cible_cinq_dix_septe,
-                        "fille_cible_cinq_dix_septe" => $request->fille_cible_cinq_dix_septe,
+                    if ($datactivite) {
+                        $activitebencible = BeneficeCibleProjet::where('activiteid', $datactivite->id)->first();
+                        $activitebencible->orguserid = $request->orgid;
+                        $activitebencible->homme_cible = $request->homme_cible;
+                        $activitebencible->femme_cible =  $request->femme_cible;
 
-                        "homme_cible_dix_huit_cinquante_neuf" => $request->homme_cible_dix_huit_cinquante_neuf,
-                        "femme_cible_dix_huit_cinquante_neuf" => $request->femme_cible_dix_huit_cinquante_neuf,
+                        $activitebencible->enfant_garcon_moin_cinq =  $request->enfant_garcon_moin_cinq;
+                        $activitebencible->enfant_fille_moin_cinq  =  $request->enfant_fille_moin_cinq;
+                        $activitebencible->personne_cible_handicap =  $request->personne_cible_handicap;
 
-                        "homme_cible_plus_cinquante_neuf" => $request->homme_cible_plus_cinquante_neuf,
-                        "femme_cible_plus_cinquante_neuf" => $request->femme_cible_plus_cinquante_neuf,
+                        $activitebencible->garcon_cible_cinq_dix_septe = $request->garcon_cible_cinq_dix_septe;
+                        $activitebencible->fille_cible_cinq_dix_septe = $request->fille_cible_cinq_dix_septe;
 
-                        'total_cible' =>  $request->total_cible,
-                    ]);
+                        $activitebencible->homme_cible_dix_huit_cinquante_neuf = $request->homme_cible_dix_huit_cinquante_neuf;
+                        $activitebencible->femme_cible_dix_huit_cinquante_neuf = $request->femme_cible_dix_huit_cinquante_neuf;
 
-                    BeneficeAtteintProjet::create([
-                        'projetid' => $dataprojet->id,
-                        "structureid" => $request->structureid,
-                        "indicateurid" => $request->indicateurid,
-                        "homme_atteint" => $request->homme_atteint,
-                        "femme_atteint" =>  $request->femme_atteint,
-                        "enfant_garcon_moin_cinq" =>  $request->enfant_garcon_moin_cinq_atteint,
-                        "enfant_fille_moin_cinq" =>  $request->enfant_fille_moin_cinq_atteint,
-                        "personne_atteint_handicap" =>  $request->personne_atteint_handicap,
-                        "garcon_atteint_cinq_dix_septe" => $request->garcon_atteint_cinq_dix_septe,
-                        "fille_atteint_cinq_dix_septe" => $request->fille_atteint_cinq_dix_septe,
-                        "homme_atteint_dix_huit_cinquante_neuf" => $request->homme_atteint_dix_huit_cinquante_neuf,
-                        "femme_atteint_dix_huit_cinquante_neuf" => $request->femme_atteint_dix_huit_cinquante_neuf,
-                        "homme_atteint_plus_cinquante_neuf" => $request->homme_atteint_plus_cinquante_neuf,
-                        "femme_atteint_plus_cinquante_neuf" => $request->femme_atteint_plus_cinquante_neuf,
-                        "total_atteint" => $request->total_atteint
-                    ]);
+                        $activitebencible->homme_cible_plus_cinquante_neuf = $request->homme_cible_plus_cinquante_neuf;
+                        $activitebencible->femme_cible_plus_cinquante_neuf = $request->femme_cible_plus_cinquante_neuf;
+                        $activitebencible->total_cible =  $request->total_cible;
+                        $activitebencible->save();
 
-                    ConsultationExterneFosaProjet::create([
-                        'projetid' => $dataprojet->id,
-                        "structureid" => $request->structureid,
-                        "indicateurid" => $request->indicateurid,
-                        "consulte_moin_cinq_fosa" => $request->consulte_moin_cinq_fosa,
-                        "consulte_cinq_dix_sept_fosa" => $request->consulte_cinq_dix_sept_fosa,
-                        "homme_fosa_dix_huit_plus_fosa" => $request->homme_fosa_dix_huit_plus_fosa,
-                        "femme_fosa_dix_huit_plus_fosa" => $request->femme_fosa_dix_huit_plus_fosa,
-                    ]);
+                        $activitebenatteint = BeneficeAtteintProjet::where('activiteid', $datactivite->id)->first();
 
-                    ConsultationCliniqueMobileProjet::create([
-                        'projetid' => $dataprojet->id,
-                        "structureid" => $request->structureid,
-                        "indicateurid" => $request->indicateurid,
-                        "consulte_moin_cinq_mob" => $request->consulte_moin_cinq_mob,
-                        "consulte_cinq_dix_sept_mob" => $request->consulte_cinq_dix_sept_mob,
-                        "homme_dix_huit_plus_mob" => $request->homme_dix_huit_plus_mob,
-                        "femme_dix_huit_plus_mob" => $request->femme_dix_huit_plus_mob,
-                    ]);
+                        $activitebenatteint->orguserid = $request->orgid;
+                        $activitebenatteint->homme_atteint = $request->homme_atteint;
+                        $activitebenatteint->femme_atteint =  $request->femme_atteint;
+                        $activitebenatteint->enfant_garcon_moin_cinq =  $request->enfant_garcon_moin_cinq_atteint;
+                        $activitebenatteint->enfant_fille_moin_cinq =  $request->enfant_fille_moin_cinq_atteint;
+                        $activitebenatteint->personne_atteint_handicap = $request->personne_atteint_handicap;
+                        $activitebenatteint->garcon_atteint_cinq_dix_septe = $request->garcon_atteint_cinq_dix_septe;
+                        $activitebenatteint->fille_atteint_cinq_dix_septe = $request->fille_atteint_cinq_dix_septe;
+                        $activitebenatteint->homme_atteint_dix_huit_cinquante_neuf = $request->homme_atteint_dix_huit_cinquante_neuf;
+                        $activitebenatteint->femme_atteint_dix_huit_cinquante_neuf = $request->femme_atteint_dix_huit_cinquante_neuf;
+                        $activitebenatteint->homme_atteint_plus_cinquante_neuf = $request->homme_atteint_plus_cinquante_neuf;
+                        $activitebenatteint->femme_atteint_plus_cinquante_neuf = $request->femme_atteint_plus_cinquante_neuf;
+                        $activitebenatteint->total_atteint = $request->total_atteint;
+                        $activitebenatteint->save();
 
-                    $autre_info_projet = AutreInfoProjets::create([
-                        'projetid' => $dataprojet->id,
-                        "structureid" => $request->structureid,
-                        "indicateurid" => $request->indicateurid,
-                        'description_activite' => $request->description_activite,
-                        'statut_activite' => $request->description_activite,
-                        "nbr_malnutrition" => $request->malnutrition,
-                        "remarque" => $request->remarque,
+                        $consultationactivite = ConsultationExterneFosaProjet::where('activiteid', $datactivite->id)->first();
 
-                    ]);
+                        $consultationactivite->orguserid = $request->orgid;
+                        $consultationactivite->consulte_moin_cinq_fosa = $request->consulte_moin_cinq_fosa;
+                        $consultationactivite->consulte_cinq_dix_sept_fosa = $request->consulte_cinq_dix_sept_fosa;
+                        $consultationactivite->homme_fosa_dix_huit_plus_fosa = $request->homme_fosa_dix_huit_plus_fosa;
+                        $consultationactivite->femme_fosa_dix_huit_plus_fosa = $request->femme_fosa_dix_huit_plus_fosa;
+                        $consultationactivite->save();
 
+                        $consultationactivite = ConsultationCliniqueMobileProjet::where('activiteid', $datactivite->id)->first();
 
-                    $autre_info_projet->infosVaccination()->detach();
-                    foreach ($request->infosVaccination as $item) {
-                        $autre_info_projet->infosVaccination()->attach([$autre_info_projet->id =>
-                        [
-                            'typevaccinid' => $item['typevaccinid'],
-                            'nbr_vaccine' => $item['nbr_vaccine'],
-                        ]]);
+                        $consultationactivite->orguserid = $request->orgid;
+                        $consultationactivite->consulte_moin_cinq_mob = $request->consulte_moin_cinq_mob;
+                        $consultationactivite->consulte_cinq_dix_sept_mob = $request->consulte_cinq_dix_sept_mob;
+                        $consultationactivite->homme_dix_huit_plus_mob = $request->homme_dix_huit_plus_mob;
+                        $consultationactivite->femme_dix_huit_plus_mob = $request->femme_dix_huit_plus_mob;
+                        $consultationactivite->save();
+
+                        $autresinfoactivite = AutreInfoProjets::where('activiteid', $datactivite->id)->first();
+                        $autresinfoactivite->orguserid = $request->orgid;
+                        $autresinfoactivite->description_activite = $request->description_activite;
+                        $autresinfoactivite->statut_activite = $request->statut_activite;
+                        $autresinfoactivite->nbr_malnutrition = $request->nbr_malnutrition;
+                        $autresinfoactivite->remarque = $request->remarque;
+                        $autresinfoactivite->nbr_accouchement = $request->nbr_accouchement;
+                        $autresinfoactivite->email = $request->email;
+                        $autresinfoactivite->phone = $request->phone;
+                        $autresinfoactivite->date_rapportage = $request->date_rapportage;
+                        $autresinfoactivite->nbr_cpn = $request->nbr_cpn;
+                        $autresinfoactivite->save();
+
+                        $datactivite->infosVaccination()->detach();
+                        foreach ($request->infosVaccination as $item) {
+                            $datactivite->infosVaccination()->attach([$datactivite->id =>
+                            [
+                                'typevaccinid' => $item['typevaccinid'],
+                                'nbr_vaccine' => $item['nbr_vaccine'],
+                            ]]);
+                        }
+                        return response()->json([
+                            "message" => "Success",
+                            "code" => 200
+                        ], 200);
                     }
-
-                    return response()->json([
-                        "message" => "Success",
-                        "code" => 200,
-                    ], 200);
                 } else {
-                    return response()->json([
-                        "message" => "Cette id du projet n'est pas reconnue dans le système!",
-                        "code" => 402
-                    ], 402);
+                    $datactivite = ActiviteProjetModel::where('id', $id)->first();
+                    $datactivite->type = $request->type;
+                    $datactivite->projetid = $request->projetid;
+                    $datactivite->orgid = $request->orgid;
+                    $datactivite->date_rapportage = $request->date_rapportage;
+                    $datactivite->structureid = $request->structureid;
+                    $datactivite->indicateurid = $request->indicateurid;
+                    $datactivite->typeimpactid = $request->type_reponse;
+                    $datactivite->cohp_relais_id = $request->cohp_relais;
+                    $datactivite->periode_rapportage = $request->periode_rapportage;
+                    $datactivite->save();
+
+                    if ($datactivite) {
+                        $activitebencible = BeneficeCibleProjet::where('activiteid', $datactivite->id)->first();
+                        $activitebencible->orguserid = $request->orgid;
+                        $activitebencible->homme_cible = $request->homme_cible;
+                        $activitebencible->femme_cible =  $request->femme_cible;
+
+                        $activitebencible->enfant_garcon_moin_cinq =  $request->enfant_garcon_moin_cinq;
+                        $activitebencible->enfant_fille_moin_cinq  =  $request->enfant_fille_moin_cinq;
+                        $activitebencible->personne_cible_handicap =  $request->personne_cible_handicap;
+
+                        $activitebencible->garcon_cible_cinq_dix_septe = $request->garcon_cible_cinq_dix_septe;
+                        $activitebencible->fille_cible_cinq_dix_septe = $request->fille_cible_cinq_dix_septe;
+
+                        $activitebencible->homme_cible_dix_huit_cinquante_neuf = $request->homme_cible_dix_huit_cinquante_neuf;
+                        $activitebencible->femme_cible_dix_huit_cinquante_neuf = $request->femme_cible_dix_huit_cinquante_neuf;
+
+                        $activitebencible->homme_cible_plus_cinquante_neuf = $request->homme_cible_plus_cinquante_neuf;
+                        $activitebencible->femme_cible_plus_cinquante_neuf = $request->femme_cible_plus_cinquante_neuf;
+                        $activitebencible->total_cible =  $request->total_cible;
+                        $activitebencible->save();
+
+                        $activitebenatteint = BeneficeAtteintProjet::where('activiteid', $datactivite->id)->first();
+                        $activitebenatteint->orguserid = $request->orgid;
+                        $activitebenatteint->homme_atteint = $request->homme_atteint;
+                        $activitebenatteint->femme_atteint =  $request->femme_atteint;
+                        $activitebenatteint->enfant_garcon_moin_cinq =  $request->enfant_garcon_moin_cinq_atteint;
+                        $activitebenatteint->enfant_fille_moin_cinq =  $request->enfant_fille_moin_cinq_atteint;
+                        $activitebenatteint->personne_atteint_handicap = $request->personne_atteint_handicap;
+                        $activitebenatteint->garcon_atteint_cinq_dix_septe = $request->garcon_atteint_cinq_dix_septe;
+                        $activitebenatteint->fille_atteint_cinq_dix_septe = $request->fille_atteint_cinq_dix_septe;
+                        $activitebenatteint->homme_atteint_dix_huit_cinquante_neuf = $request->homme_atteint_dix_huit_cinquante_neuf;
+                        $activitebenatteint->femme_atteint_dix_huit_cinquante_neuf = $request->femme_atteint_dix_huit_cinquante_neuf;
+                        $activitebenatteint->homme_atteint_plus_cinquante_neuf = $request->homme_atteint_plus_cinquante_neuf;
+                        $activitebenatteint->femme_atteint_plus_cinquante_neuf = $request->femme_atteint_plus_cinquante_neuf;
+                        $activitebenatteint->total_atteint = $request->total_atteint;
+                        $activitebenatteint->save();
+                        return response()->json([
+                            "message" => "Success",
+                            "code" => 200
+                        ], 200);
+                    }
                 }
             } else {
                 return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
-                    "code" => 402
+                    "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                    "code" => 402,
                 ], 402);
             }
-        } else {
-            return response()->json([
-                "message" => "not authorized",
-                "code" => 404,
-            ], 404);
         }
     }
 

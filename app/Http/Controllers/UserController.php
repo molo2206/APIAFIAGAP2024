@@ -29,7 +29,7 @@ class UserController extends Controller
     {
         try {
             $request->validate([
-                'email' => 'required|email',
+                'email' => 'required',
                 'pswd' => 'required',
             ]);
 
@@ -84,41 +84,52 @@ class UserController extends Controller
     }
     public function getUsers()
     {
-        return response()->json([
-            "message" => "Liste des utilisateurs",
-            "data" => User::with('affectation', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
-                ->get(),
-        ]);
+        try {
+            return response()->json([
+                "message" => "Liste des utilisateurs",
+                "data" => User::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
+                    ->get(),
+            ]);
+        } catch (\Throwable $th) {
+            throw new \Exception($th->getMessage());
+        }
     }
 
     public function getuser()
     {
-        $user = Auth::user();
-        return response()->json([
-            "message" => 'success',
-            "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
-                ->where('id', $user->id)->first(),
-        ], 200);
-    }
-
-    public function getuserId($id)
-    {
-
-        if (User::where('id', $id)->exists()) {
-            $user = User::where('id', $id)->first();
-
-            $token = $user->createToken("accessToken")->plainTextToken;
+        try {
+            $user = Auth::user();
             return response()->json([
                 "message" => 'success',
                 "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
                     ->where('id', $user->id)->first(),
-                "status" => 1,
-                "token" => $token
             ], 200);
-        } else {
-            return response()->json([
-                "message" => "Cette adresse email n'existe pas"
-            ], 404);
+        } catch (\Throwable $th) {
+            throw new \Exception($th->getMessage());
+        }
+    }
+
+    public function getuserId($id)
+    {
+        try {
+            if (User::where('id', $id)->exists()) {
+                $user = User::where('id', $id)->first();
+
+                $token = $user->createToken("accessToken")->plainTextToken;
+                return response()->json([
+                    "message" => 'success',
+                    "data" => $user::with('affectation', 'typeUser', 'affectation.organisation', 'affectation.permission')->where('deleted', 0)
+                        ->where('id', $user->id)->first(),
+                    "status" => 1,
+                    "token" => $token
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Cette adresse email n'existe pas"
+                ], 404);
+            }
+        } catch (\Throwable $th) {
+            throw new \Exception($th->getMessage());
         }
     }
 
@@ -163,10 +174,10 @@ class UserController extends Controller
         if (AffectationModel::find($id)) {
             return response()->json([
                 "message" => 'Affection et Permissions',
-                "data" => AffectationModel::with('user', 'organisation', 'permission')->where('id',$id)->where('deleted', 0)->first(),
+                "data" => AffectationModel::with('user', 'organisation', 'permission')->where('id', $id)->where('deleted', 0)->first(),
                 "status" => 200,
             ], 200);
-        }else{
+        } else {
             return response()->json([
                 "message" => 'Not found',
                 "status" => 422,

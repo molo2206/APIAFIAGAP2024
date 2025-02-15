@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //Authentification
 Route::post('/create_account', [UserController::class, 'Register']);
 Route::post('/login', [UserController::class, 'Login']);
+Route::post('/auth/login', [UserController::class, 'Login']);
 Route::post('/ask_otp', [UserController::class, 'askcodevalidateion']);
 Route::post('/lost_pswd', [UserController::class, 'Lost_pswd']);
 Route::post('/provider', [UserController::class, 'AuthProvider']);
